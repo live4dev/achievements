@@ -24,7 +24,7 @@ async def get_all_active_achievements(
 ) -> list[Achievement]:
     result = await session.execute(
         select(Achievement)
-        .options(selectinload(Achievement.prerequisites))
+        .options(selectinload(Achievement.prerequisites), selectinload(Achievement.category))
         .where(Achievement.is_active == True)  # noqa: E712
         .order_by(Achievement.sort_order, Achievement.title)
     )

@@ -41,9 +41,11 @@ async def get_user_achievement_tree(
             status=status,
             achieved_at=gua.achieved_at.isoformat() if (gua and gua.achieved_at) else None,
         )
+        ach_out = AchievementOut.model_validate(ach)
+        ach_out.category_name = ach.category.name if ach.category else None
         nodes.append(
             AchievementTreeNode(
-                achievement=AchievementOut.model_validate(ach),
+                achievement=ach_out,
                 prerequisites=[
                     PrerequisiteOut.model_validate(p) for p in ach.prerequisites
                 ],
@@ -51,6 +53,9 @@ async def get_user_achievement_tree(
             )
         )
     return nodes
+
+
+_RARITY_SORT = {"LEGENDARY": 0, "EPIC": 1, "RARE": 2, "UNCOMMON": 3, "COMMON": 4}
 
 
 async def get_user_achievements_by_status(
@@ -62,4 +67,10 @@ async def get_user_achievements_by_status(
     nodes = await get_user_achievement_tree(session, group_id, user_id)
     if status_filter:
         nodes = [n for n in nodes if n.user_state.status == status_filter.upper()]
+    # Sort: category name → rarity (LEGENDARY first) → sort_order
+    nodes.sort(key=lambda n: (
+        n.achievement.category_name or "",
+        _RARITY_SORT.get(n.achievement.rarity, 99),
+        n.achievement.sort_order,
+    ))
     return nodes

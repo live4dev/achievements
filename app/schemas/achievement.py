@@ -20,6 +20,7 @@ class AchievementOut(BaseModel):
     title: str
     description: str
     category_id: uuid.UUID
+    category_name: str | None = None
     rarity: str
     repeatable: bool
     max_level: int | None

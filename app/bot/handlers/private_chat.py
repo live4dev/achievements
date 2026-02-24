@@ -30,7 +30,7 @@ from app.repos.claim_repo import (
     get_group_submitted_claims,
     get_user_claims,
 )
-from app.repos.group_repo import get_member, get_user_groups
+from app.repos.group_repo import get_member, get_user_groups, upsert_member
 from app.repos.user_repo import upsert_user
 from app.services.achievement_service import get_user_achievements_by_status
 from app.services.claim_service import (
@@ -187,6 +187,53 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             return await _show_main_menu(update, context)
         await query.edit_message_text(
             "Выберите группу:", reply_markup=kb.group_list_kb(groups)
+        )
+        return SELECT_GROUP
+
+    if data == "menu:leave_group":
+        group_id: uuid.UUID = context.user_data["group_id"]
+        group_title = context.user_data.get("group_title", "группу")
+        await query.edit_message_text(
+            f"Вы уверены, что хотите покинуть группу <b>{group_title}</b>?\n"
+            "После этого вы не сможете управлять ачивками в ней.",
+            reply_markup=kb.confirm_leave_kb(str(group_id)),
+            parse_mode="HTML",
+        )
+        return MAIN_MENU
+
+    if data.startswith("leave_confirm:"):
+        group_id = uuid.UUID(data.split(":", 1)[1])
+        user_id: uuid.UUID = context.user_data["user_id"]
+        async with async_session_factory() as session:
+            member = await get_member(session, group_id, user_id)
+            if member:
+                await upsert_member(
+                    session,
+                    group_id=group_id,
+                    user_id=user_id,
+                    role=member.role,
+                    status="LEFT",
+                )
+                await session.commit()
+        context.user_data.pop("group_id", None)
+        context.user_data.pop("group_title", None)
+
+        async with async_session_factory() as session:
+            groups = await get_user_groups(session, user_id)
+
+        if not groups:
+            await query.edit_message_text("Вы покинули группу. Больше нет доступных групп.")
+            return ConversationHandler.END
+
+        if len(groups) == 1:
+            group, _ = groups[0]
+            context.user_data["group_id"] = group.id
+            context.user_data["group_title"] = group.title
+            return await _show_main_menu(update, context)
+
+        await query.edit_message_text(
+            "Вы покинули группу. Выберите другую:",
+            reply_markup=kb.group_list_kb(groups),
         )
         return SELECT_GROUP
 
@@ -434,12 +481,18 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             # Notify the group chat
             if group.telegram_chat_id:
                 try:
-                    name = _user_display(user)
+                    mention = f"@{user.username}" if user.username else f"<b>{_user_display(user)}</b>"
+                    icon_part = f"{ach.icon} " if ach.icon else ""
+                    if ach.repeatable:
+                        max_txt = f"/{ach.max_level}" if ach.max_level else ""
+                        progress_part = f" — уровень {level}{max_txt}"
+                    else:
+                        progress_part = ""
                     await context.bot.send_message(
                         chat_id=group.telegram_chat_id,
                         text=(
-                            f"🏆 <b>{name}</b> получил(а) ачивку "
-                            f"<b>{ach.title}</b>{level_text}! 🎊"
+                            f"🏆 {mention} получил(а) ачивку "
+                            f"«<b>{ach.title}</b>» {icon_part}({ach.rarity}){progress_part}!"
                         ),
                         parse_mode="HTML",
                     )
@@ -502,6 +555,12 @@ async def _do_submit_claim(
 
         tg_user = update.effective_user
         name = tg_user.first_name or tg_user.username or str(tg_user.id)
+        mention = f"@{tg_user.username}" if tg_user.username else f"<b>{name}</b>"
+        icon_part = f"{ach.icon} " if ach.icon else ""
+        evidence_preview = ""
+        if evidence and evidence.get("text"):
+            preview = evidence["text"][:200]
+            evidence_preview = f"\n📝 <i>{preview}</i>"
         for admin in admins:
             if admin.tg_user_id == tg_user.id:
                 continue  # skip self-notification if admin claims
@@ -509,8 +568,10 @@ async def _do_submit_claim(
                 await context.bot.send_message(
                     chat_id=admin.tg_user_id,
                     text=(
-                        f"📩 Новая заявка от <b>{name}</b> на ачивку "
-                        f"<b>{ach.title}</b>.\n"
+                        f"📩 <b>Новая заявка</b>\n\n"
+                        f"👤 {mention}\n"
+                        f"🏆 {icon_part}<b>{ach.title}</b> ({ach.rarity})"
+                        f"{evidence_preview}\n\n"
                         f"Откройте «Заявки на подтверждение» в боте."
                     ),
                     parse_mode="HTML",

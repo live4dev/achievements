@@ -34,6 +34,7 @@ def main_menu_kb(is_admin: bool) -> InlineKeyboardMarkup:
             [InlineKeyboardButton("🧾 Заявки на подтверждение", callback_data="menu:admin_claims")]
         )
     buttons.append([InlineKeyboardButton("🔄 Сменить группу", callback_data="menu:change_group")])
+    buttons.append([InlineKeyboardButton("🚪 Покинуть группу", callback_data="menu:leave_group")])
     return InlineKeyboardMarkup(buttons)
 
 
@@ -42,11 +43,24 @@ def achievement_list_kb(
     back_cb: str,
 ) -> InlineKeyboardMarkup:
     buttons = []
+    current_category: str | None = None
+
     for node in nodes:
         ach = node.achievement
-        emoji = RARITY_EMOJI.get(ach.rarity, "")
-        label = f"{emoji} {ach.title}"
+        cat = ach.category_name or "Прочее"
+
+        # Category separator row
+        if cat != current_category:
+            current_category = cat
+            buttons.append([
+                InlineKeyboardButton(f"— {cat} —", callback_data="noop")
+            ])
+
+        rarity_emoji = RARITY_EMOJI.get(ach.rarity, "")
+        icon = f"{ach.icon} " if ach.icon else ""
+        label = f"{rarity_emoji} {icon}{ach.title}"
         buttons.append([InlineKeyboardButton(label, callback_data=f"ach:{ach.id}")])
+
     buttons.append([InlineKeyboardButton("◀️ Назад", callback_data=back_cb)])
     return InlineKeyboardMarkup(buttons)
 
@@ -108,6 +122,13 @@ def admin_claim_detail_kb(claim_id: str) -> InlineKeyboardMarkup:
             [InlineKeyboardButton("◀️ Назад", callback_data="menu:admin_claims")],
         ]
     )
+
+
+def confirm_leave_kb(group_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ Да, покинуть", callback_data=f"leave_confirm:{group_id}")],
+        [InlineKeyboardButton("◀️ Отмена", callback_data="back:menu")],
+    ])
 
 
 def back_kb(cb: str) -> InlineKeyboardMarkup:

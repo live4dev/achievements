@@ -80,6 +80,21 @@ async def get_user_groups(
     return result.all()
 
 
+async def get_group_members(
+    session: AsyncSession, group_id: uuid.UUID
+) -> list[GroupMember]:
+    """Returns all ACTIVE GroupMember rows with user eagerly loaded."""
+    from sqlalchemy.orm import selectinload
+
+    result = await session.execute(
+        select(GroupMember)
+        .options(selectinload(GroupMember.user))
+        .where(GroupMember.group_id == group_id, GroupMember.status == "ACTIVE")
+        .order_by(GroupMember.role.desc(), GroupMember.joined_at)
+    )
+    return result.scalars().all()
+
+
 async def get_group_admins(
     session: AsyncSession, group_id: uuid.UUID
 ) -> list[User]:
