@@ -1,0 +1,218 @@
+# Family Achievements seed data
+# Run: python -m app.seed.import_achievements
+
+categories:
+  - code: health
+    name: Здоровье
+    description: Всё, что связано со спортом и здоровым образом жизни
+
+  - code: education
+    name: Образование
+    description: Знания, курсы, книги, навыки
+
+  - code: creativity
+    name: Творчество
+    description: Рисунки, поделки, музыка, танцы
+
+  - code: household
+    name: Быт
+    description: Помощь по дому и ответственность
+
+  - code: social
+    name: Общение
+    description: Семья, друзья, командная работа
+
+achievements:
+  # ── Health ──────────────────────────────────────────────────────────────────
+  - code: first_run
+    title: Первая пробежка
+    description: Пробеги хотя бы 1 км без остановки.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🏃
+    sort_order: 10
+
+  - code: runner
+    title: Бегун
+    description: Пробеги 5 км без остановки.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 25
+    icon: 🏃‍♂️
+    sort_order: 20
+    prerequisites:
+      - code: first_run
+        min_level: 1
+
+  - code: marathon_spirit
+    title: Дух марафонца
+    description: Пробеги 42 км суммарно за неделю.
+    category: health
+    rarity: RARE
+    repeatable: true
+    max_level: 10
+    points: 50
+    icon: 🥇
+    sort_order: 30
+    prerequisites:
+      - code: runner
+        min_level: 1
+
+  - code: morning_person
+    title: Жаворонок
+    description: Вставай до 7 утра 7 дней подряд.
+    category: health
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 4
+    points: 20
+    icon: 🌅
+    sort_order: 40
+
+  # ── Education ───────────────────────────────────────────────────────────────
+  - code: bookworm
+    title: Книжный червь
+    description: Прочти книгу от начала до конца.
+    category: education
+    rarity: COMMON
+    repeatable: true
+    points: 15
+    icon: 📚
+    sort_order: 10
+
+  - code: polyglot
+    title: Полиглот
+    description: Выучи 100 слов на иностранном языке.
+    category: education
+    rarity: UNCOMMON
+    repeatable: false
+    points: 30
+    icon: 🌍
+    sort_order: 20
+
+  - code: course_complete
+    title: Дипломированный
+    description: Пройди онлайн-курс полностью с сертификатом.
+    category: education
+    rarity: RARE
+    repeatable: true
+    max_level: 5
+    points: 60
+    icon: 🎓
+    sort_order: 30
+
+  # ── Creativity ──────────────────────────────────────────────────────────────
+  - code: first_drawing
+    title: Первый рисунок
+    description: Нарисуй и покажи свою работу семье.
+    category: creativity
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🖍️
+    sort_order: 10
+
+  - code: musician
+    title: Музыкант
+    description: Сыграй мелодию на любом инструменте.
+    category: creativity
+    rarity: UNCOMMON
+    repeatable: false
+    points: 25
+    icon: 🎵
+    sort_order: 20
+
+  - code: creator
+    title: Творец
+    description: Создай поделку, картину или проект и подари кому-то.
+    category: creativity
+    rarity: RARE
+    repeatable: true
+    max_level: 10
+    points: 35
+    icon: 🎨
+    sort_order: 30
+    prerequisites:
+      - code: first_drawing
+        min_level: 1
+
+  # ── Household ───────────────────────────────────────────────────────────────
+  - code: chef
+    title: Шеф-повар
+    description: Приготовь блюдо для всей семьи самостоятельно.
+    category: household
+    rarity: COMMON
+    repeatable: true
+    max_level: 20
+    points: 15
+    icon: 🍳
+    sort_order: 10
+
+  - code: clean_room
+    title: Чистюля
+    description: Убери свою комнату до блеска без напоминаний.
+    category: household
+    rarity: COMMON
+    repeatable: true
+    max_level: 50
+    points: 5
+    icon: 🧹
+    sort_order: 20
+
+  - code: handyman
+    title: Мастер на все руки
+    description: Почини или собери что-то в доме самостоятельно.
+    category: household
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 10
+    points: 30
+    icon: 🔧
+    sort_order: 30
+
+  # ── Social ──────────────────────────────────────────────────────────────────
+  - code: family_day
+    title: Семейный день
+    description: Организуй совместный досуг для всей семьи.
+    category: social
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 12
+    points: 40
+    icon: 👨‍👩‍👧‍👦
+    sort_order: 10
+
+  - code: team_player
+    title: Командный игрок
+    description: Прими участие в командном мероприятии или игре.
+    category: social
+    rarity: COMMON
+    repeatable: true
+    max_level: 20
+    points: 15
+    icon: 🤝
+    sort_order: 20
+
+  - code: legend
+    title: Семейная легенда
+    description: Получи 5 редких ачивок и стань примером для всей семьи.
+    category: social
+    rarity: LEGENDARY
+    repeatable: false
+    points: 200
+    icon: 👑
+    sort_order: 100
+    prerequisites:
+      - code: runner
+        min_level: 1
+      - code: course_complete
+        min_level: 1
+      - code: creator
+        min_level: 1
+      - code: handyman
+        min_level: 1
+      - code: family_day
+        min_level: 3
