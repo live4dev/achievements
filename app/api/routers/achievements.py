@@ -9,7 +9,13 @@ from app.repos.group_repo import get_group_by_id
 from app.repos.user_repo import get_user_by_id
 from app.repos.achievement_repo import get_all_categories
 from app.schemas.achievement import AchievementTreeNode, CategoryOut
-from app.services.achievement_service import get_user_achievements_by_status
+from app.schemas.tree import AggregateTreeResponse, MembersResponse, TreeResponse
+from app.services.achievement_service import (
+    get_group_aggregate_tree,
+    get_group_members_list,
+    get_user_achievements_by_status,
+    get_user_tree_graph,
+)
 
 router = APIRouter(prefix="/api", tags=["achievements"])
 
@@ -32,7 +38,7 @@ async def _validate_group_user(
 
 @router.get(
     "/groups/{group_id}/users/{user_id}/tree",
-    response_model=list[AchievementTreeNode],
+    response_model=TreeResponse,
 )
 async def achievement_tree(
     group_id: uuid.UUID,
@@ -40,11 +46,14 @@ async def achievement_tree(
     session: SessionDep,
 ):
     """
-    Full achievement tree for a user in a group with dependency graph
-    and current user state (LOCKED / AVAILABLE / ACHIEVED).
+    Graph-friendly achievement tree for a user: nodes, edges, and user state
+    keyed by achievement code. Used by the web UI.
     """
-    await _validate_group_user(session, group_id, user_id)
-    return await get_user_achievements_by_status(session, group_id, user_id)
+    group, user = await _validate_group_user(session, group_id, user_id)
+    display_name = user.first_name or user.username or str(user.tg_user_id)
+    return await get_user_tree_graph(
+        session, group_id, user_id, group.title, display_name
+    )
 
 
 @router.get(
@@ -77,3 +86,35 @@ async def group_categories(
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
     return await get_all_categories(session)
+
+
+@router.get(
+    "/groups/{group_id}/members",
+    response_model=MembersResponse,
+)
+async def group_members(
+    group_id: uuid.UUID,
+    session: SessionDep,
+):
+    """Returns all active members of a group."""
+    group = await get_group_by_id(session, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return await get_group_members_list(session, group_id)
+
+
+@router.get(
+    "/groups/{group_id}/tree/aggregate",
+    response_model=AggregateTreeResponse,
+)
+async def aggregate_tree(
+    group_id: uuid.UUID,
+    session: SessionDep,
+):
+    """
+    Achievement tree with aggregated progress counts across all group members.
+    """
+    group = await get_group_by_id(session, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return await get_group_aggregate_tree(session, group_id, group.title)

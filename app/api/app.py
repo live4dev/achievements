@@ -1,10 +1,14 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routers.achievements import router as achievements_router
 from app.core.config import settings
+
+_FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 
 @asynccontextmanager
@@ -27,6 +31,11 @@ def create_fastapi_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(achievements_router)
+
+    # Serve frontend static files (must be mounted last)
+    if _FRONTEND_DIR.exists():
+        app.mount("/", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="frontend")
+
     return app
 
 

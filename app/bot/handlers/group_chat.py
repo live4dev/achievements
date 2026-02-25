@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.constants import ChatMemberStatus, ChatType
 from telegram.ext import ContextTypes
 
+from app.core.config import settings
 from app.core.database import async_session_factory
 from app.repos.achievement_repo import get_all_active_achievements
 from app.repos.group_repo import get_group_by_chat_id, get_group_members, upsert_group_by_chat_id, upsert_member
@@ -177,6 +178,49 @@ async def list_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     lines.append(f"\nВсего: {len(members)}")
 
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+async def web_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    /web — отправляет ссылки на веб-интерфейс для группы и каждого участника.
+    """
+    chat = update.effective_chat
+    if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+        await update.message.reply_text("Эта команда работает только в групповых чатах.")
+        return
+
+    async with async_session_factory() as session:
+        group = await get_group_by_chat_id(session, chat.id)
+        if not group:
+            await update.message.reply_text(
+                "Эта группа ещё не зарегистрирована.\n"
+                "Попросите администратора выполнить /register."
+            )
+            return
+        members = await get_group_members(session, group.id)
+
+    base = settings.WEB_URL.rstrip("/")
+    group_url = f"{base}/?group={group.id}&mode=aggregate"
+
+    lines = [
+        f'🌐 <b>Веб-интерфейс достижений</b> — «{group.title}»\n',
+        f'📊 <a href="{group_url}">Дерево группы (агрегат)</a>\n',
+    ]
+
+    if members:
+        lines.append("👤 <b>Прогресс участников:</b>")
+        for m in members:
+            u = m.user
+            name = u.first_name or u.username or str(u.tg_user_id)
+            user_url = f"{base}/?group={group.id}&user={u.id}&mode=participant"
+            role_mark = " 👑" if m.role == "ADMIN" else ""
+            lines.append(f'  • <a href="{user_url}">{name}</a>{role_mark}')
+
+    await update.message.reply_text(
+        "\n".join(lines),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
 
 
 RARITY_EMOJI = {

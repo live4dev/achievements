@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
+    WEB_URL: str = "http://localhost:8000"
 
 
 settings = Settings()

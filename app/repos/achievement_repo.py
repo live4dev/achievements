@@ -60,6 +60,16 @@ async def get_user_guas(
     return result.scalars().all()
 
 
+async def get_all_group_guas(
+    session: AsyncSession,
+    group_id: uuid.UUID,
+) -> list[GroupUserAchievement]:
+    result = await session.execute(
+        select(GroupUserAchievement).where(GroupUserAchievement.group_id == group_id)
+    )
+    return result.scalars().all()
+
+
 async def upsert_gua_approved(
     session: AsyncSession,
     group_id: uuid.UUID,
