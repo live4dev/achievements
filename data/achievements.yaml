@@ -1,0 +1,675 @@
+# Family Achievements seed data
+# Run: python -m app.seed.import_achievements
+
+categories:
+  - code: school
+    name: Школа
+    description: Учёба, домашние задания и школьные результаты
+
+  - code: home
+    name: Дом
+    description: Порядок, уборка и бытовая ответственность
+
+  - code: family
+    name: Семья
+    description: Отношения, совместные активности и забота о близких
+
+  - code: friends
+    name: Друзья
+    description: Дружба, встречи и совместный досуг
+
+  - code: hobby
+    name: Хобби
+    description: Творчество, сцена и развитие увлечений
+
+  - code: health
+    name: Здоровье / Спорт
+    description: Физическая активность, закаливание и полезные привычки
+
+  - code: travel
+    name: Путешествия
+    description: Походы, поездки и новые впечатления
+
+achievements:
+  # ── School
+  - code: school_finish_quarter_45
+    title: Четверть на 4–5
+    description: Закончить четверть с оценками 4–5.
+    category: school
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 12
+    points: 40
+    icon: 📘
+    sort_order: 10
+
+  - code: school_finish_year_45
+    title: Учебный год на 4–5
+    description: Закончить учебный год с оценками 4–5.
+    category: school
+    rarity: RARE
+    repeatable: true
+    max_level: 11
+    points: 120
+    icon: 🎓
+    sort_order: 20
+    prerequisites:
+      - code: school_finish_quarter_45
+        min_level: 1
+
+  - code: school_homework_weekend
+    title: Домашка заранее
+    description: Сделать всю домашнюю работу на выходных.
+    category: school
+    rarity: COMMON
+    repeatable: true
+    max_level: 50
+    points: 20
+    icon: ✍️
+    sort_order: 30
+
+  # ── Home
+  - code: home_general_cleaning
+    title: Генеральная уборка
+    description: Сделать полноценную генеральную уборку.
+    category: home
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 50
+    points: 35
+    icon: 🧹
+    sort_order: 110
+
+  - code: home_tidy_closet_1w
+    title: Аккуратный шкаф — 1 неделя
+    description: Поддерживать аккуратный шкаф 1 неделю.
+    category: home
+    rarity: COMMON
+    repeatable: false
+    points: 15
+    icon: 👕
+    sort_order: 120
+
+  - code: home_tidy_closet_3w
+    title: Аккуратный шкаф — 3 недели
+    description: Поддерживать аккуратный шкаф 3 недели подряд.
+    category: home
+    rarity: UNCOMMON
+    repeatable: false
+    points: 35
+    icon: 🧺
+    sort_order: 130
+    prerequisites:
+      - code: home_tidy_closet_1w
+        min_level: 1
+
+  - code: home_tidy_closet_5w
+    title: Хранитель порядка
+    description: Поддерживать аккуратный шкаф 5 недель подряд.
+    category: home
+    rarity: RARE
+    repeatable: false
+    points: 60
+    icon: 🗂️
+    sort_order: 140
+    prerequisites:
+      - code: home_tidy_closet_3w
+        min_level: 1
+
+  # ── Family
+  - code: family_individual_day
+    title: Личный день
+    description: Сходить с одним членом семьи на индивидуальный день.
+    category: family
+    rarity: COMMON
+    repeatable: true
+    max_level: 100
+    points: 25
+    icon: 🤝
+    sort_order: 210
+
+  - code: family_cinema_together
+    title: Семейный кинотеатр
+    description: Сходить всей семьёй в кинотеатр.
+    category: family
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 30
+    points: 35
+    icon: 🎬
+    sort_order: 220
+
+  - code: family_dacha_week
+    title: Неделя на даче
+    description: Провести неделю на даче всей семьёй.
+    category: family
+    rarity: RARE
+    repeatable: true
+    max_level: 20
+    points: 70
+    icon: 🏡
+    sort_order: 230
+
+  - code: family_keep_calm_big_conflict
+    title: Ты не вредина
+    description: Во время очень сильной ссоры сдержаться и ни до кого не докапываться.
+    category: family
+    rarity: EPIC
+    repeatable: true
+    max_level: 100
+    points: 80
+    icon: 🧘
+    sort_order: 240
+
+  - code: family_cook_for_everyone
+    title: Повар семьи
+    description: Приготовить еду для всех.
+    category: family
+    rarity: COMMON
+    repeatable: true
+    max_level: 100
+    points: 20
+    icon: 🍳
+    sort_order: 250
+
+  - code: family_board_games
+    title: Вечер настолок
+    description: Поиграть всей семьёй в настольные игры.
+    category: family
+    rarity: COMMON
+    repeatable: true
+    max_level: 100
+    points: 20
+    icon: 🎲
+    sort_order: 260
+
+  # ── Friends
+  - code: friends_ice_rink
+    title: Каток с друзьями
+    description: Сходить с друзьями на каток.
+    category: friends
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 30
+    points: 30
+    icon: ⛸️
+    sort_order: 310
+
+  # ── Hobby
+  - code: hobby_drums_on_stage
+    title: Барабанщик на сцене
+    description: Сыграть на барабанах на сцене.
+    category: hobby
+    rarity: EPIC
+    repeatable: true
+    max_level: 20
+    points: 100
+    icon: 🥁
+    sort_order: 410
+
+  # ── Health / Sport (strength)
+  - code: health_pullups_3
+    title: 3 подтягивания
+    description: Подтянуться 3 раза.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 15
+    icon: 💪
+    sort_order: 510
+
+  - code: health_pullups_5
+    title: 5 подтягиваний
+    description: Подтянуться 5 раз.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 30
+    icon: 💪
+    sort_order: 520
+    prerequisites:
+      - code: health_pullups_3
+        min_level: 1
+
+  - code: health_pullups_10
+    title: 10 подтягиваний
+    description: Подтянуться 10 раз.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 60
+    icon: 🏅
+    sort_order: 530
+    prerequisites:
+      - code: health_pullups_5
+        min_level: 1
+
+  - code: health_pushups_10
+    title: 10 отжиманий
+    description: Сделать 10 отжиманий.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🤸
+    sort_order: 540
+
+  - code: health_pushups_20
+    title: 20 отжиманий
+    description: Сделать 20 отжиманий.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 20
+    icon: 🤸
+    sort_order: 550
+    prerequisites:
+      - code: health_pushups_10
+        min_level: 1
+
+  - code: health_pushups_30
+    title: 30 отжиманий
+    description: Сделать 30 отжиманий.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 35
+    icon: 🤸
+    sort_order: 560
+    prerequisites:
+      - code: health_pushups_20
+        min_level: 1
+
+  - code: health_pushups_40
+    title: 40 отжиманий
+    description: Сделать 40 отжиманий.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 50
+    icon: 🔥
+    sort_order: 570
+    prerequisites:
+      - code: health_pushups_30
+        min_level: 1
+
+  - code: health_pushups_50
+    title: 50 отжиманий
+    description: Сделать 50 отжиманий.
+    category: health
+    rarity: EPIC
+    repeatable: false
+    points: 80
+    icon: 🏆
+    sort_order: 580
+    prerequisites:
+      - code: health_pushups_40
+        min_level: 1
+
+  # ── Health / Sport (water)
+  - code: health_underwater_swim_25
+    title: Под водой 25 м
+    description: Проплыть 25 метров под водой.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 20
+    icon: 🏊
+    sort_order: 590
+
+  - code: health_underwater_swim_50
+    title: Под водой 50 м
+    description: Проплыть 50 метров под водой.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 40
+    icon: 🌊
+    sort_order: 600
+    prerequisites:
+      - code: health_underwater_swim_25
+        min_level: 1
+
+  - code: health_underwater_swim_75
+    title: Под водой 75 м
+    description: Проплыть 75 метров под водой.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 70
+    icon: 🌊
+    sort_order: 610
+    prerequisites:
+      - code: health_underwater_swim_50
+        min_level: 1
+
+  - code: health_underwater_swim_100
+    title: Под водой 100 м
+    description: Проплыть 100 метров под водой.
+    category: health
+    rarity: EPIC
+    repeatable: false
+    points: 110
+    icon: 🐬
+    sort_order: 620
+    prerequisites:
+      - code: health_underwater_swim_75
+        min_level: 1
+
+  - code: health_dive_2m
+    title: Нырок 2 м
+    description: Нырнуть на глубину 2 метра.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🤿
+    sort_order: 630
+
+  - code: health_dive_3m
+    title: Нырок 3 м
+    description: Нырнуть на глубину 3 метра.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 15
+    icon: 🤿
+    sort_order: 640
+    prerequisites:
+      - code: health_dive_2m
+        min_level: 1
+
+  - code: health_dive_5m
+    title: Нырок 5 м
+    description: Нырнуть на глубину 5 метров.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 25
+    icon: 🤿
+    sort_order: 650
+    prerequisites:
+      - code: health_dive_3m
+        min_level: 1
+
+  - code: health_dive_10m
+    title: Нырок 10 м
+    description: Нырнуть на глубину 10 метров.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 50
+    icon: 🌊
+    sort_order: 660
+    prerequisites:
+      - code: health_dive_5m
+        min_level: 1
+
+  - code: health_dive_15m
+    title: Нырок 15 м
+    description: Нырнуть на глубину 15 метров.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 70
+    icon: 🌊
+    sort_order: 670
+    prerequisites:
+      - code: health_dive_10m
+        min_level: 1
+
+  - code: health_dive_20m
+    title: Нырок 20 м
+    description: Нырнуть на глубину 20 метров.
+    category: health
+    rarity: EPIC
+    repeatable: false
+    points: 90
+    icon: 🐋
+    sort_order: 680
+    prerequisites:
+      - code: health_dive_15m
+        min_level: 1
+
+  - code: health_dive_30m
+    title: Нырок 30 м
+    description: Нырнуть на глубину 30 метров.
+    category: health
+    rarity: LEGENDARY
+    repeatable: false
+    points: 140
+    icon: 👑
+    sort_order: 690
+    prerequisites:
+      - code: health_dive_20m
+        min_level: 1
+
+  # ── Health / Sport (cold & habits)
+  - code: health_cold_water_after_banya
+    title: Закалка после бани
+    description: Облиться холодной водой после бани.
+    category: health
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 100
+    points: 25
+    icon: 🧊
+    sort_order: 700
+
+  - code: health_cold_shower_5s
+    title: Холодный душ — 5 сек
+    description: Принять холодный душ 5 секунд.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🚿
+    sort_order: 710
+
+  - code: health_cold_shower_10s
+    title: Холодный душ — 10 сек
+    description: Принять холодный душ 10 секунд.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 15
+    icon: 🚿
+    sort_order: 720
+    prerequisites:
+      - code: health_cold_shower_5s
+        min_level: 1
+
+  - code: health_cold_shower_15s
+    title: Холодный душ — 15 сек
+    description: Принять холодный душ 15 секунд.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 20
+    icon: 🚿
+    sort_order: 730
+    prerequisites:
+      - code: health_cold_shower_10s
+        min_level: 1
+
+  - code: health_cold_shower_30s
+    title: Холодный душ — 30 сек
+    description: Принять холодный душ 30 секунд.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 35
+    icon: ❄️
+    sort_order: 740
+    prerequisites:
+      - code: health_cold_shower_15s
+        min_level: 1
+
+  - code: health_cold_shower_60s
+    title: Холодный душ — 60 сек
+    description: Принять холодный душ 60 секунд.
+    category: health
+    rarity: EPIC
+    repeatable: false
+    points: 60
+    icon: 🧊
+    sort_order: 750
+    prerequisites:
+      - code: health_cold_shower_30s
+        min_level: 1
+
+  - code: health_cold_bath_5s
+    title: Холодная ванна — 5 сек
+    description: Побыть в холодной ванне 5 секунд.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🛁
+    sort_order: 760
+
+  - code: health_cold_bath_10s
+    title: Холодная ванна — 10 сек
+    description: Побыть в холодной ванне 10 секунд.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 20
+    icon: 🛁
+    sort_order: 770
+    prerequisites:
+      - code: health_cold_bath_5s
+        min_level: 1
+
+  - code: health_cold_bath_15s
+    title: Холодная ванна — 15 сек
+    description: Побыть в холодной ванне 15 секунд.
+    category: health
+    rarity: UNCOMMON
+    repeatable: false
+    points: 25
+    icon: 🛁
+    sort_order: 780
+    prerequisites:
+      - code: health_cold_bath_10s
+        min_level: 1
+
+  - code: health_cold_bath_30s
+    title: Холодная ванна — 30 сек
+    description: Побыть в холодной ванне 30 секунд.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 40
+    icon: ❄️
+    sort_order: 790
+    prerequisites:
+      - code: health_cold_bath_15s
+        min_level: 1
+
+  - code: health_cold_bath_60s
+    title: Ледяная выдержка
+    description: Побыть в холодной ванне 60 секунд.
+    category: health
+    rarity: EPIC
+    repeatable: false
+    points: 70
+    icon: 🧊
+    sort_order: 800
+    prerequisites:
+      - code: health_cold_bath_30s
+        min_level: 1
+
+  - code: health_no_sweets_1w
+    title: Без сладкого — 1 неделя
+    description: Воздерживаться от сладкого 1 неделю.
+    category: health
+    rarity: COMMON
+    repeatable: true
+    max_level: 20
+    points: 20
+    icon: 🍬
+    sort_order: 810
+
+  - code: health_no_sweets_3w
+    title: Без сладкого — 3 недели
+    description: Воздерживаться от сладкого 3 недели.
+    category: health
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 20
+    points: 45
+    icon: 🚫🍭
+    sort_order: 820
+    prerequisites:
+      - code: health_no_sweets_1w
+        min_level: 1
+
+  - code: health_no_sweets_5w
+    title: Без сладкого — 5 недель
+    description: Воздерживаться от сладкого 5 недель.
+    category: health
+    rarity: RARE
+    repeatable: true
+    max_level: 20
+    points: 80
+    icon: 🥗
+    sort_order: 830
+    prerequisites:
+      - code: health_no_sweets_3w
+        min_level: 1
+
+  - code: health_competition_participation
+    title: Участник соревнований
+    description: Принять участие в соревнованиях.
+    category: health
+    rarity: EPIC
+    repeatable: true
+    max_level: 50
+    points: 100
+    icon: 🏁
+    sort_order: 840
+
+  # ── Travel
+  - code: travel_hiking_trip
+    title: Первый поход
+    description: Сходить в поход.
+    category: travel
+    rarity: UNCOMMON
+    repeatable: true
+    max_level: 30
+    points: 50
+    icon: 🥾
+    sort_order: 910
+
+  - code: travel_baikal
+    title: Байкал
+    description: Побывать на Байкале.
+    category: travel
+    rarity: LEGENDARY
+    repeatable: false
+    points: 200
+    icon: 🏞️
+    sort_order: 920
+
+  - code: travel_maldives_swim
+    title: Мальдивы
+    description: Поплавать на Мальдивах.
+    category: travel
+    rarity: LEGENDARY
+    repeatable: false
+    points: 250
+    icon: 🏝️
+    sort_order: 930
+
+  - code: travel_rv_house
+    title: Дом на колёсах
+    description: Покататься в доме на колёсах.
+    category: travel
+    rarity: EPIC
+    repeatable: true
+    max_level: 10
+    points: 120
+    icon: 🚐
+    sort_order: 940
+  
