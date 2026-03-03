@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.repos.group_repo import get_group_by_id
+from app.repos.group_repo import get_all_groups_with_member_count, get_group_by_id
 from app.repos.user_repo import get_user_by_id
 from app.repos.achievement_repo import get_all_categories
 from app.schemas.achievement import AchievementTreeNode, CategoryOut
-from app.schemas.tree import AggregateTreeResponse, MembersResponse, TreeResponse
+from app.schemas.tree import AggregateTreeResponse, GroupDirectoryItem, MembersResponse, TreeResponse
 from app.services.achievement_service import (
     get_group_aggregate_tree,
     get_group_members_list,
@@ -34,6 +34,16 @@ async def _validate_group_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return group, user
+
+
+@router.get("/groups", response_model=list[GroupDirectoryItem])
+async def list_groups(session: SessionDep):
+    """Returns all groups with their active member count."""
+    rows = await get_all_groups_with_member_count(session)
+    return [
+        GroupDirectoryItem(id=group.id, title=group.title, member_count=count)
+        for group, count in rows
+    ]
 
 
 @router.get(

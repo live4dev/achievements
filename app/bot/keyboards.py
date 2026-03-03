@@ -38,6 +38,18 @@ def main_menu_kb(is_admin: bool) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(buttons)
 
 
+def category_list_kb(
+    categories: list[tuple[str, int]],  # (category_name, count)
+    back_cb: str,
+) -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(f"{name}  ({count})", callback_data=f"cat:{name}")]
+        for name, count in categories
+    ]
+    buttons.append([InlineKeyboardButton("◀️ Назад", callback_data=back_cb)])
+    return InlineKeyboardMarkup(buttons)
+
+
 def achievement_list_kb(
     nodes: list,  # list[AchievementTreeNode]
     back_cb: str,

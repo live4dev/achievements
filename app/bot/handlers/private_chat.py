@@ -66,6 +66,14 @@ RARITY_LABEL = {
 }
 
 
+def _group_by_category(nodes: list) -> list[tuple[str, int]]:
+    cats: dict[str, int] = {}
+    for n in nodes:
+        name = n.achievement.category_name or "Прочее"
+        cats[name] = cats.get(name, 0) + 1
+    return list(cats.items())
+
+
 def _user_display(user) -> str:
     if user.first_name:
         name = user.first_name
@@ -240,6 +248,45 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     if data == "back:menu":
         return await _show_main_menu(update, context)
 
+    if data == "back:categories":
+        status = context.user_data.get("list_status", "AVAILABLE")
+        label_map = {
+            "AVAILABLE": "✅ Доступные ачивки",
+            "ACHIEVED": "🏆 Полученные ачивки",
+            "LOCKED": "🔒 Заблокированные ачивки",
+        }
+        group_id: uuid.UUID = context.user_data["group_id"]
+        user_id: uuid.UUID = context.user_data["user_id"]
+        async with async_session_factory() as session:
+            nodes = await get_user_achievements_by_status(session, group_id, user_id, status)
+        cats = _group_by_category(nodes)
+        await query.edit_message_text(
+            f"{label_map.get(status, 'Ачивки')}\n\nВыберите категорию:",
+            reply_markup=kb.category_list_kb(cats, back_cb="back:menu"),
+        )
+        return MAIN_MENU
+
+    if data.startswith("cat:"):
+        category_name = data[4:]
+        context.user_data["list_category"] = category_name
+        status = context.user_data.get("list_status", "AVAILABLE")
+        group_id: uuid.UUID = context.user_data["group_id"]
+        user_id: uuid.UUID = context.user_data["user_id"]
+        async with async_session_factory() as session:
+            nodes = await get_user_achievements_by_status(session, group_id, user_id, status)
+        nodes = [n for n in nodes if (n.achievement.category_name or "Прочее") == category_name]
+        if not nodes:
+            await query.edit_message_text(
+                f"В категории «{category_name}» нет ачивок.",
+                reply_markup=kb.back_kb("back:categories"),
+            )
+        else:
+            await query.edit_message_text(
+                f"📂 {category_name}\n\nВыберите ачивку:",
+                reply_markup=kb.achievement_list_kb(nodes, back_cb="back:categories"),
+            )
+        return MAIN_MENU
+
     if data in ("menu:available", "menu:achieved", "menu:locked"):
         status_map = {
             "menu:available": "AVAILABLE",
@@ -268,9 +315,10 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                 reply_markup=kb.back_kb("back:menu"),
             )
         else:
+            cats = _group_by_category(nodes)
             await query.edit_message_text(
-                f"{label_map[data]}\n\nВыберите ачивку:",
-                reply_markup=kb.achievement_list_kb(nodes, back_cb="back:menu"),
+                f"{label_map[data]}\n\nВыберите категорию:",
+                reply_markup=kb.category_list_kb(cats, back_cb="back:menu"),
             )
         return MAIN_MENU
 
@@ -352,8 +400,12 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         )
 
         context.user_data["viewing_ach_id"] = str(ach_id)
-        list_status = context.user_data.get("list_status", "AVAILABLE")
-        back_cb = f"menu:{list_status.lower()}"
+        list_category = context.user_data.get("list_category")
+        if list_category:
+            back_cb = f"cat:{list_category}"
+        else:
+            list_status = context.user_data.get("list_status", "AVAILABLE")
+            back_cb = f"menu:{list_status.lower()}"
 
         await query.edit_message_text(
             text,

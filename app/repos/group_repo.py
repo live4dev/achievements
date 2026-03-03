@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -93,6 +93,22 @@ async def get_group_members(
         .order_by(GroupMember.role.desc(), GroupMember.joined_at)
     )
     return result.scalars().all()
+
+
+async def get_all_groups_with_member_count(
+    session: AsyncSession,
+) -> list[tuple[Group, int]]:
+    """Returns all groups with their active member count, ordered by title."""
+    result = await session.execute(
+        select(Group, func.count(GroupMember.user_id).label("member_count"))
+        .outerjoin(
+            GroupMember,
+            (GroupMember.group_id == Group.id) & (GroupMember.status == "ACTIVE"),
+        )
+        .group_by(Group.id)
+        .order_by(Group.title)
+    )
+    return result.all()
 
 
 async def get_group_admins(

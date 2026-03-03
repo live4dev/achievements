@@ -76,3 +76,9 @@ class AggregateTreeResponse(BaseModel):
     achievements: list[AchievementNode]
     edges: list[EdgeOut]
     aggregate_state: dict[str, AggregateStateValue]  # keyed by achievement code
+
+
+class GroupDirectoryItem(BaseModel):
+    id: uuid.UUID
+    title: str
+    member_count: int
