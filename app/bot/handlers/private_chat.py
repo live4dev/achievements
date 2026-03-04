@@ -7,6 +7,7 @@ SELECT_GROUP       – user picks a group
 MAIN_MENU          – main menu shown (waits for callback)
 AWAIT_EVIDENCE     – waiting for the user to type evidence text
 ADMIN_REJECT_INPUT – waiting for admin to type rejection reason
+ADMIN_PANEL+       – admin panel states (see app/bot/states.py)
 """
 
 import logging
@@ -23,6 +24,20 @@ from telegram.ext import (
 )
 
 from app.bot import keyboards as kb
+from app.bot.states import (
+    ADMIN_ACH_DETAIL,
+    ADMIN_ACH_INPUT,
+    ADMIN_ACH_LIST,
+    ADMIN_ACH_PREREQS,
+    ADMIN_ACH_WIZARD,
+    ADMIN_CAT_INPUT,
+    ADMIN_CAT_LIST,
+    ADMIN_PANEL,
+    AWAIT_EVIDENCE,
+    ADMIN_REJECT_INPUT,
+    MAIN_MENU,
+    SELECT_GROUP,
+)
 from app.core.database import async_session_factory
 from app.repos.achievement_repo import get_achievement_by_id
 from app.repos.claim_repo import (
@@ -42,16 +57,6 @@ from app.services.claim_service import (
 )
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# State constants
-# ---------------------------------------------------------------------------
-(
-    SELECT_GROUP,
-    MAIN_MENU,
-    AWAIT_EVIDENCE,
-    ADMIN_REJECT_INPUT,
-) = range(4)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -357,6 +362,13 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                 reply_markup=kb.admin_claim_list_kb(claims),
             )
         return MAIN_MENU
+
+    if data == "menu:admin_panel":
+        if not context.user_data.get("is_admin"):
+            await query.answer("Нет доступа.", show_alert=True)
+            return MAIN_MENU
+        from app.bot.handlers.admin_panel import admin_panel_entry
+        return await admin_panel_entry(update, context)
 
     # ---- achievement detail ------------------------------------------------
     if data.startswith("ach:"):
@@ -701,6 +713,17 @@ async def _do_reject_claim(
 
 
 def build_private_conversation() -> ConversationHandler:
+    from app.bot.handlers.admin_panel import (
+        ADMIN_ACH_DETAIL_HANDLERS,
+        ADMIN_ACH_INPUT_HANDLERS,
+        ADMIN_ACH_LIST_HANDLERS,
+        ADMIN_ACH_PREREQS_HANDLERS,
+        ADMIN_ACH_WIZARD_HANDLERS,
+        ADMIN_CAT_INPUT_HANDLERS,
+        ADMIN_CAT_LIST_HANDLERS,
+        ADMIN_PANEL_HANDLERS,
+    )
+
     return ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
@@ -718,6 +741,14 @@ def build_private_conversation() -> ConversationHandler:
                 CommandHandler("skip", skip_reject_reason),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, receive_reject_reason),
             ],
+            ADMIN_PANEL: ADMIN_PANEL_HANDLERS,
+            ADMIN_CAT_LIST: ADMIN_CAT_LIST_HANDLERS,
+            ADMIN_CAT_INPUT: ADMIN_CAT_INPUT_HANDLERS,
+            ADMIN_ACH_LIST: ADMIN_ACH_LIST_HANDLERS,
+            ADMIN_ACH_DETAIL: ADMIN_ACH_DETAIL_HANDLERS,
+            ADMIN_ACH_INPUT: ADMIN_ACH_INPUT_HANDLERS,
+            ADMIN_ACH_WIZARD: ADMIN_ACH_WIZARD_HANDLERS,
+            ADMIN_ACH_PREREQS: ADMIN_ACH_PREREQS_HANDLERS,
         },
         fallbacks=[CommandHandler("start", start)],
         per_chat=True,

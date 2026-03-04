@@ -5,7 +5,7 @@ import logging
 from telegram import Update
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, ContextTypes, filters
 
-from app.bot.handlers.group_chat import join_group, list_achievements, list_members, register_group, web_links
+from app.bot.handlers.group_chat import group_progress, join_group, list_achievements, list_members, register_group, web_links
 from app.bot.handlers.private_chat import build_private_conversation
 from app.core.config import settings
 
@@ -26,6 +26,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/join — вступить в группу как участник\n"
         "/members — список участников группы\n"
         "/achievements — каталог всех достижений\n"
+        "/progress — достижения участников с датой получения\n"
         "/web — ссылки на веб-интерфейс дерева ачивок\n\n"
         "<b>Везде:</b>\n"
         "/ping — проверить работу бота\n"
@@ -78,6 +79,13 @@ def create_application() -> Application:
         CommandHandler(
             "web",
             web_links,
+            filters=filters.ChatType.GROUPS,
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            "progress",
+            group_progress,
             filters=filters.ChatType.GROUPS,
         )
     )

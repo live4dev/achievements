@@ -6,8 +6,12 @@ from telegram import Update
 from telegram.constants import ChatMemberStatus, ChatType
 from telegram.ext import ContextTypes
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from app.core.config import settings
 from app.core.database import async_session_factory
+from app.models.orm import Achievement, GroupMember, GroupUserAchievement
 from app.repos.achievement_repo import get_all_active_achievements
 from app.repos.group_repo import get_group_by_chat_id, get_group_members, upsert_group_by_chat_id, upsert_member
 from app.repos.user_repo import upsert_user
@@ -286,3 +290,115 @@ async def list_achievements(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     )
 
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+_PLACE_EMOJI = {1: "🥇", 2: "🥈", 3: "🥉"}
+
+
+async def group_progress(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    /progress — достижения каждого участника, упорядоченные по времени получения.
+    """
+    chat = update.effective_chat
+    if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+        await update.message.reply_text("Эта команда работает только в групповых чатах.")
+        return
+
+    async with async_session_factory() as session:
+        group = await get_group_by_chat_id(session, chat.id)
+        if not group:
+            await update.message.reply_text(
+                "Эта группа ещё не зарегистрирована.\n"
+                "Попросите администратора выполнить /register."
+            )
+            return
+
+        members_res = await session.execute(
+            select(GroupMember)
+            .options(selectinload(GroupMember.user))
+            .where(GroupMember.group_id == group.id, GroupMember.status == "ACTIVE")
+            .order_by(GroupMember.joined_at)
+        )
+        members = members_res.scalars().all()
+
+        if not members:
+            await update.message.reply_text("В группе пока нет участников.")
+            return
+
+        guas_res = await session.execute(
+            select(GroupUserAchievement)
+            .options(
+                selectinload(GroupUserAchievement.achievement).selectinload(Achievement.category),
+            )
+            .where(
+                GroupUserAchievement.group_id == group.id,
+                GroupUserAchievement.status == "ACHIEVED",
+            )
+            .order_by(GroupUserAchievement.achieved_at.desc())
+        )
+        guas = guas_res.scalars().all()
+
+    by_user: dict = {}
+    for gua in guas:
+        by_user.setdefault(gua.user_id, []).append(gua)
+
+    def _name(member: GroupMember) -> str:
+        u = member.user
+        name = (u.first_name or "").strip()
+        if u.last_name:
+            name = f"{name} {u.last_name}".strip()
+        return name or u.username or str(u.tg_user_id)
+
+    def _ach_word(n: int) -> str:
+        if 11 <= n % 100 <= 19:
+            return "ачивок"
+        r = n % 10
+        if r == 1:
+            return "ачивка"
+        if 2 <= r <= 4:
+            return "ачивки"
+        return "ачивок"
+
+    def _member_sort_key(m: GroupMember):
+        user_guas = by_user.get(m.user_id, [])
+        pts = sum(g.achievement.points or 0 for g in user_guas)
+        return (-len(user_guas), -pts)
+
+    sorted_members = sorted(members, key=_member_sort_key)
+    total_achieved = sum(len(v) for v in by_user.values())
+
+    lines = [f"🏆 <b>Прогресс участников — «{group.title}»</b>\n"]
+
+    for place, member in enumerate(sorted_members, start=1):
+        user_guas = by_user.get(member.user_id, [])
+        count = len(user_guas)
+        pts = sum(g.achievement.points or 0 for g in user_guas)
+        role_mark = " 👑" if member.role == "ADMIN" else ""
+        place_emoji = _PLACE_EMOJI.get(place, f"{place}.")
+        pts_text = f" · {pts}⭐" if pts else ""
+
+        lines.append(
+            f"{place_emoji} <b>{_name(member)}</b>{role_mark}"
+            f" — {count} {_ach_word(count)}{pts_text}"
+        )
+
+        if not user_guas:
+            lines.append("  <i>нет достижений</i>")
+        else:
+            for gua in user_guas:  # newest first
+                ach = gua.achievement
+                emoji = RARITY_EMOJI.get(ach.rarity, "")
+                icon = f"{ach.icon} " if ach.icon else ""
+                level_text = f" ур.{gua.level}" if ach.repeatable else ""
+                ts = gua.achieved_at.strftime("%d.%m.%Y %H:%M") if gua.achieved_at else "—"
+                lines.append(f"  {emoji} {icon}<b>{ach.title}</b>{level_text}  <i>{ts}</i>")
+
+        lines.append("")
+
+    lines.append(f"<i>Всего ачивок получено: {total_achieved}</i>")
+
+    text = "\n".join(lines)
+    if len(text) > 4000:
+        text = text[:3980] + "\n\n<i>… список обрезан</i>"
+
+    await update.message.reply_text(text, parse_mode="HTML")
