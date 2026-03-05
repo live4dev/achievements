@@ -244,6 +244,16 @@ achievements:
       - code: health_pullups_5
         min_level: 1
 
+  - code: health_press_10
+    title: 10 пресс
+    description: Сделать 10 пресс.
+    category: health
+    rarity: COMMON
+    repeatable: false
+    points: 10
+    icon: 🤸
+    sort_order: 535
+
   - code: health_pushups_10
     title: 10 отжиманий
     description: Сделать 10 отжиманий.
@@ -271,7 +281,7 @@ achievements:
     title: 30 отжиманий
     description: Сделать 30 отжиманий.
     category: health
-    rarity: UNCOMMON
+    rarity: COMMON
     repeatable: false
     points: 35
     icon: 🤸
@@ -284,7 +294,7 @@ achievements:
     title: 40 отжиманий
     description: Сделать 40 отжиманий.
     category: health
-    rarity: RARE
+    rarity: UNCOMMON
     repeatable: false
     points: 50
     icon: 🔥
@@ -297,13 +307,26 @@ achievements:
     title: 50 отжиманий
     description: Сделать 50 отжиманий.
     category: health
-    rarity: EPIC
+    rarity: RARE
     repeatable: false
     points: 80
     icon: 🏆
     sort_order: 580
     prerequisites:
       - code: health_pushups_40
+        min_level: 1
+
+  - code: health_pushups_100
+    title: 100 отжиманий
+    description: Сделать 100 отжиманий.
+    category: health
+    rarity: RARE
+    repeatable: false
+    points: 120
+    icon: 🏆
+    sort_order: 581
+    prerequisites:
+      - code: health_pushups_50
         min_level: 1
 
   # ── Health / Sport (water)

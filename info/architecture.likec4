@@ -1,0 +1,240 @@
+// Family Achievements — LikeC4 Architecture Diagram
+// https://likec4.dev
+
+specification {
+
+  element person {
+    style {
+      shape person
+    }
+  }
+
+  element system {
+    style {
+      color blue
+    }
+  }
+
+  element externalSystem {
+    style {
+      color secondary
+      opacity 70%
+    }
+  }
+
+  element container {
+    style {
+      color sky
+    }
+  }
+
+  element database {
+    style {
+      shape storage
+      color slate
+    }
+  }
+
+  element component {
+    style {
+      color amber
+    }
+  }
+
+}
+
+model {
+
+  // ─── Actors ────────────────────────────────────────────────────────────────
+
+  person member 'Участник' {
+    description 'Член семьи. Подаёт заявки на ачивки, просматривает прогресс в боте и браузере.'
+  }
+
+  person admin 'Администратор' {
+    description 'Член семьи с правами admin. Одобряет / отклоняет заявки, регистрирует группу, управляет ачивками.'
+  }
+
+  // ─── External ──────────────────────────────────────────────────────────────
+
+  externalSystem telegramCloud 'Telegram' {
+    description 'Telegram Bot API. Доставляет updates (long-polling).'
+    technology 'Telegram Bot API'
+  }
+
+  // ─── System ────────────────────────────────────────────────────────────────
+
+  system familyAchievements 'Family Achievements' {
+    description 'Telegram-бот + REST API + веб-интерфейс для отслеживания семейных достижений.'
+
+    // ── Telegram Bot ──────────────────────────────────────────────────────
+
+    container bot 'Telegram Bot' {
+      description 'Обрабатывает команды в групповых чатах и ведёт личные диалоги (12 состояний ConversationHandler).'
+      technology 'Python 3.12, python-telegram-bot v21'
+
+      component groupHandlers 'Group Handlers' {
+        description '/register /join /members /achievements /progress /web'
+        technology 'CommandHandler'
+      }
+
+      component privateHandlers 'Private Handlers' {
+        description 'Просмотр ачивок, подача заявок, рецензирование (states 0-3)'
+        technology 'ConversationHandler'
+      }
+
+      component adminPanel 'Admin Panel' {
+        description 'CRUD категорий и ачивок, мастер создания, управление пресреквизитами с DFS cycle detection (states 4-11)'
+        technology 'ConversationHandler'
+      }
+
+      component keyboards 'Keyboards' {
+        description 'Построители всех InlineKeyboardMarkup'
+        technology 'PTB InlineKeyboardMarkup'
+      }
+    }
+
+    // ── REST API + Frontend ───────────────────────────────────────────────
+
+    container api 'REST API & Frontend' {
+      description 'FastAPI + Uvicorn :8000. REST-эндпоинты и статика фронтенда.'
+      technology 'Python 3.12, FastAPI, Uvicorn'
+
+      component restEndpoints 'REST Endpoints' {
+        description 'GET /api/groups, /members, /users/{id}/tree, /tree/aggregate, /categories'
+        technology 'FastAPI Router'
+      }
+
+      component achievementService 'Achievement Service' {
+        description 'get_user_tree_graph, get_group_aggregate_tree. Статус ачивки вычисляется лениво — без фоновых задач.'
+        technology 'SQLAlchemy async'
+      }
+
+      component claimService 'Claim Service' {
+        description 'submit_claim, approve_claim, reject_claim. Транзакция в БД → уведомление через бота.'
+        technology 'SQLAlchemy async'
+      }
+
+      component adminService 'Admin Service' {
+        description 'Безопасные CRUD-обёртки для категорий и ачивок, toggle prerequisite с cycle detection.'
+        technology 'SQLAlchemy async'
+      }
+
+      component repos 'Repositories' {
+        description 'user_repo, group_repo, achievement_repo, claim_repo, admin_repo'
+        technology 'SQLAlchemy 2.0 async, selectinload'
+      }
+
+      component frontend 'Web Frontend' {
+        description 'SPA: каталог групп, дерево ачивок, фильтры, детальная панель.'
+        technology 'Vanilla JS, Cytoscape.js, cytoscape-dagre'
+      }
+    }
+
+    // ── Database ──────────────────────────────────────────────────────────
+
+    database db 'Database' {
+      description 'users, groups, group_members, categories, achievements, achievement_prerequisites (DAG), group_user_achievements, achievement_claims, achievement_events'
+      technology 'SQLite (dev) / PostgreSQL 15 (prod), Alembic'
+    }
+
+    // ── Внутренние связи ──────────────────────────────────────────────────
+
+    bot.groupHandlers -> bot.keyboards 'строит клавиатуры'
+    bot.privateHandlers -> bot.keyboards 'строит клавиатуры'
+    bot.adminPanel -> bot.keyboards 'строит клавиатуры'
+
+    bot.privateHandlers -> api.claimService 'submit / approve / reject'
+    bot.adminPanel -> api.adminService 'CRUD ачивок и категорий'
+    bot.groupHandlers -> api.repos 'читает участников и ачивки'
+    bot.privateHandlers -> api.achievementService 'get_user_achievements_by_status'
+
+    api.restEndpoints -> api.achievementService 'tree / aggregate'
+    api.restEndpoints -> api.repos 'groups, members, categories'
+
+    api.achievementService -> api.repos 'compute_achievement_status'
+    api.claimService -> api.repos 'claim CRUD'
+    api.adminService -> api.repos 'achievement / category CRUD'
+
+    api.repos -> db 'SQL'
+    bot -> db 'SQL (shared SQLAlchemy engine)'
+  }
+
+  // ─── Внешние связи ────────────────────────────────────────────────────────
+
+  member -> telegramCloud 'команды в чате, личные сообщения'
+  admin -> telegramCloud 'управление через бота'
+  member -> familyAchievements.api.frontend 'просматривает прогресс'
+  admin -> familyAchievements.api.frontend 'агрегированное дерево группы'
+
+  telegramCloud -> familyAchievements.bot 'updates (long-polling)'
+  familyAchievements.bot -> telegramCloud 'sendMessage / editMessage'
+
+}
+
+// ─── Views ───────────────────────────────────────────────────────────────────
+
+views {
+
+  // Level 1 — System Context
+  view index {
+    title 'System Context'
+
+    include *
+
+    style member {
+      color green
+    }
+    style admin {
+      color red
+    }
+
+    autoLayout TopBottom
+  }
+
+  // Level 2 — Containers
+  view containers of familyAchievements {
+    title 'Containers'
+
+    include familyAchievements.*
+    include member, admin, telegramCloud
+
+    autoLayout TopBottom
+  }
+
+  // Level 3 — Bot components
+  view botComponents of familyAchievements.bot {
+    title 'Bot — Components'
+
+    include familyAchievements.bot.*
+    include familyAchievements.db
+
+    autoLayout LeftRight
+  }
+
+  // Level 3 — API components
+  view apiComponents of familyAchievements.api {
+    title 'API — Components'
+
+    include familyAchievements.api.*
+    include familyAchievements.db
+    include member, admin
+
+    autoLayout LeftRight
+  }
+
+  // Claim flow
+  view claimFlow {
+    title 'Claim Flow'
+
+    include member, admin, telegramCloud
+    include familyAchievements.bot.privateHandlers
+    include familyAchievements.bot.adminPanel
+    include familyAchievements.api.claimService
+    include familyAchievements.api.repos
+    include familyAchievements.db
+
+    autoLayout TopBottom
+  }
+
+}
