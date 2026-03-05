@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.orm import Achievement, AchievementPrerequisite, Category
+from app.models.orm import Achievement, AchievementPrerequisite, Category, User
 from app.repos.admin_repo import (
     add_prerequisite,
     check_cycle,
@@ -120,6 +120,64 @@ async def deactivate_achievement_safe(
 # ---------------------------------------------------------------------------
 # Prerequisites
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Grant achievement
+# ---------------------------------------------------------------------------
+
+
+async def grant_achievement_safe(
+    session: AsyncSession,
+    group_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+    achievement_id: uuid.UUID,
+    admin_user_id: uuid.UUID,
+) -> dict:
+    """Directly grant an achievement to a group member, bypassing the claim flow.
+
+    Returns {"achievement": Achievement, "user": User, "level": int}.
+    Raises AdminError on any validation failure.
+    """
+    from app.repos.achievement_repo import get_achievement_by_id, get_gua, upsert_gua_approved
+    from app.repos.claim_repo import add_event
+    from app.repos.group_repo import get_member
+
+    admin_member = await get_member(session, group_id, admin_user_id)
+    if not admin_member or admin_member.role != "ADMIN" or admin_member.status != "ACTIVE":
+        raise AdminError("У вас нет прав администратора в этой группе.")
+
+    target_member = await get_member(session, group_id, target_user_id)
+    if not target_member or target_member.status != "ACTIVE":
+        raise AdminError("Пользователь не является активным участником группы.")
+
+    achievement = await get_achievement_by_id(session, achievement_id)
+    if not achievement or not achievement.is_active:
+        raise AdminError("Ачивка не найдена или неактивна.")
+
+    gua = await get_gua(session, group_id, target_user_id, achievement_id)
+    if gua and gua.status == "ACHIEVED":
+        if not achievement.repeatable:
+            raise AdminError(f"Участник уже получил ачивку «{achievement.title}».")
+        if achievement.max_level is not None and gua.level >= achievement.max_level:
+            raise AdminError(
+                f"Участник уже достиг максимального уровня (ур.{gua.level}) "
+                f"ачивки «{achievement.title}»."
+            )
+
+    new_gua = await upsert_gua_approved(session, group_id, target_user_id, achievement)
+    await add_event(
+        session,
+        group_id=group_id,
+        user_id=target_user_id,
+        achievement_id=achievement_id,
+        event_type="ADMIN_GRANTED",
+        payload={"admin_user_id": str(admin_user_id), "level": new_gua.level},
+    )
+    await session.commit()
+
+    user = await session.get(User, target_user_id)
+    return {"achievement": achievement, "user": user, "level": new_gua.level}
 
 
 async def toggle_prerequisite_safe(

@@ -3,9 +3,9 @@
 import logging
 
 from telegram import Update
-from telegram.ext import Application, ApplicationBuilder, CommandHandler, ContextTypes, filters
+from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, filters
 
-from app.bot.handlers.group_chat import group_progress, join_group, list_achievements, list_members, register_group, web_links
+from app.bot.handlers.group_chat import grant_callback, grant_command, group_progress, join_group, list_achievements, list_members, register_group, web_links
 from app.bot.handlers.private_chat import build_private_conversation
 from app.core.config import settings
 
@@ -27,7 +27,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "/members — список участников группы\n"
         "/achievements — каталог всех достижений\n"
         "/progress — достижения участников с датой получения\n"
-        "/web — ссылки на веб-интерфейс дерева ачивок\n\n"
+        "/web — ссылки на веб-интерфейс дерева ачивок\n"
+        "/grant — выдать ачивку участнику (только для администраторов)\n\n"
         "<b>Везде:</b>\n"
         "/ping — проверить работу бота\n"
         "/help — показать это сообщение"
@@ -89,6 +90,14 @@ def create_application() -> Application:
             filters=filters.ChatType.GROUPS,
         )
     )
+    app.add_handler(
+        CommandHandler(
+            "grant",
+            grant_command,
+            filters=filters.ChatType.GROUPS,
+        )
+    )
+    app.add_handler(CallbackQueryHandler(grant_callback, pattern=r"^grnt_"))
 
     # Private-chat conversation
     app.add_handler(build_private_conversation())

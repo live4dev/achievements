@@ -294,3 +294,37 @@ def wizard_confirm_kb() -> InlineKeyboardMarkup:
             InlineKeyboardButton("❌ Отмена", callback_data="adm_w_cancel"),
         ]
     ])
+
+
+# ---------------------------------------------------------------------------
+# Grant keyboards (group chat /grant flow)
+# ---------------------------------------------------------------------------
+
+
+def grant_member_kb(members: list[tuple[int, str]]) -> InlineKeyboardMarkup:
+    """members: [(index, display_name), ...]"""
+    buttons = [
+        [InlineKeyboardButton(name, callback_data=f"grnt_u:{i}")]
+        for i, name in members
+    ]
+    buttons.append([InlineKeyboardButton("❌ Отмена", callback_data="grnt_no")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def grant_ach_kb(achievements: list[tuple[int, str, str]]) -> InlineKeyboardMarkup:
+    """achievements: [(index, title, rarity), ...]"""
+    buttons = [
+        [InlineKeyboardButton(f"{RARITY_EMOJI.get(rarity, '')} {title}", callback_data=f"grnt_a:{i}")]
+        for i, title, rarity in achievements
+    ]
+    buttons.append([InlineKeyboardButton("❌ Отмена", callback_data="grnt_no")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def grant_confirm_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Выдать", callback_data="grnt_ok"),
+            InlineKeyboardButton("❌ Отмена", callback_data="grnt_no"),
+        ]
+    ])

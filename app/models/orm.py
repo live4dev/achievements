@@ -299,7 +299,7 @@ class AchievementEvent(Base):
     __tablename__ = "achievement_events"
     __table_args__ = (
         CheckConstraint(
-            "event_type IN ('CLAIM_SUBMITTED','CLAIM_APPROVED','CLAIM_REJECTED','LEVEL_INCREMENT')",
+            "event_type IN ('CLAIM_SUBMITTED','CLAIM_APPROVED','CLAIM_REJECTED','LEVEL_INCREMENT','ADMIN_GRANTED')",
             name="ck_event_type",
         ),
     )
