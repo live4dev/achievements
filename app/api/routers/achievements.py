@@ -1,10 +1,13 @@
 import uuid
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_session
+from app.core.security import decode_access_token
 from app.repos.group_repo import get_all_groups_with_member_count, get_group_by_id
 from app.repos.user_repo import get_user_by_id
 from app.repos.achievement_repo import get_all_categories
@@ -20,6 +23,24 @@ from app.services.achievement_service import (
 router = APIRouter(prefix="/api", tags=["achievements"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+_bearer = HTTPBearer(auto_error=False)
+
+
+def _get_current_user_id(
+    creds: HTTPAuthorizationCredentials | None = Security(_bearer),
+) -> int:
+    if settings.SKIP_AUTH:
+        return 0
+    if not creds:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        return decode_access_token(creds.credentials)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+CurrentUser = Annotated[int, Depends(_get_current_user_id)]
 
 
 async def _validate_group_user(
@@ -37,7 +58,7 @@ async def _validate_group_user(
 
 
 @router.get("/groups", response_model=list[GroupDirectoryItem])
-async def list_groups(session: SessionDep):
+async def list_groups(session: SessionDep, _: CurrentUser):
     """Returns all groups with their active member count."""
     rows = await get_all_groups_with_member_count(session)
     return [
@@ -120,6 +141,7 @@ async def group_members(
 async def aggregate_tree(
     group_id: uuid.UUID,
     session: SessionDep,
+    _: CurrentUser,
 ):
     """
     Achievement tree with aggregated progress counts across all group members.

@@ -192,12 +192,17 @@ async def get_group_aggregate_tree(
 
     member_ids = [m.user_id for m in members]
     total = len(member_ids)
+    member_display: dict[uuid.UUID, str] = {
+        m.user_id: (m.user.first_name or m.user.username or str(m.user.tg_user_id))
+        for m in members
+    }
 
     aggregate_state: dict[str, AggregateStateValue] = {}
     for ach in achievements:
         achieved = 0
         available = 0
         locked = 0
+        achieved_by: list[str] = []
         for uid in member_ids:
             user_guas = guas_by_user.get(uid, [])
             gua_map = {g.achievement_id: g for g in user_guas}
@@ -208,6 +213,7 @@ async def get_group_aggregate_tree(
             status = compute_achievement_status(ach, gua, achieved_map)
             if status == "ACHIEVED":
                 achieved += 1
+                achieved_by.append(member_display[uid])
             elif status == "AVAILABLE":
                 available += 1
             else:
@@ -217,6 +223,7 @@ async def get_group_aggregate_tree(
             available_count=available,
             locked_count=locked,
             total=total,
+            achieved_by=achieved_by,
         )
 
     return AggregateTreeResponse(

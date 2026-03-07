@@ -68,6 +68,7 @@ class AggregateStateValue(BaseModel):
     available_count: int
     locked_count: int
     total: int
+    achieved_by: list[str] = []
 
 
 class AggregateTreeResponse(BaseModel):

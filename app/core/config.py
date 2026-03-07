@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     WEB_URL: str = "http://localhost:8000"
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_EXPIRE_SECONDS: int = 86400
+    SKIP_AUTH: bool = False
 
 
 settings = Settings()

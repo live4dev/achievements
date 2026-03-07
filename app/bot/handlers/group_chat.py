@@ -186,7 +186,7 @@ async def list_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def web_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    /web — отправляет ссылки на веб-интерфейс для группы и каждого участника.
+    /web — отправляет ссылку на веб-интерфейс достижений группы.
     """
     chat = update.effective_chat
     if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
@@ -201,27 +201,13 @@ async def web_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "Попросите администратора выполнить /register."
             )
             return
-        members = await get_group_members(session, group.id)
 
     base = settings.WEB_URL.rstrip("/")
-    group_url = f"{base}/?group={group.id}&mode=aggregate"
-
-    lines = [
-        f'🌐 <b>Веб-интерфейс достижений</b> — «{group.title}»\n',
-        f'📊 <a href="{group_url}">Дерево группы (агрегат)</a>\n',
-    ]
-
-    if members:
-        lines.append("👤 <b>Прогресс участников:</b>")
-        for m in members:
-            u = m.user
-            name = u.first_name or u.username or str(u.tg_user_id)
-            user_url = f"{base}/?group={group.id}&user={u.id}&mode=participant"
-            role_mark = " 👑" if m.role == "ADMIN" else ""
-            lines.append(f'  • <a href="{user_url}">{name}</a>{role_mark}')
+    group_url = f"{base}/#/group/{group.id}"
 
     await update.message.reply_text(
-        "\n".join(lines),
+        f'🌐 <b>Достижения группы «{group.title}»</b>\n\n'
+        f'<a href="{group_url}">Открыть</a>',
         parse_mode="HTML",
         disable_web_page_preview=True,
     )

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routers.achievements import router as achievements_router
+from app.api.routers.auth import router as auth_router
 from app.core.config import settings
 
 _FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -30,6 +31,7 @@ def create_fastapi_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.include_router(auth_router)
     app.include_router(achievements_router)
 
     # Serve frontend static files (must be mounted last)
