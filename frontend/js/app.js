@@ -1,236 +1,291 @@
 /**
- * app.js — main orchestrator.
- *
- * URL params:
- *   ?group=<uuid>
- *   ?user=<uuid>
- *   ?mode=participant|aggregate
- *   ?focus=<achievement_code>
+ * app.js — mobile SPA, two screens:
+ *   #/            → groups list
+ *   #/group/{id}  → achievements in group
  */
 
-import { fetchTree, fetchMembers, fetchAggregate } from './api.js';
-import { initGraph, loadParticipant, loadAggregate, applyVisibility, focusNode, onNodeSelect, setDirection, fitGraph, zoomIn, zoomOut, getCurrentData } from './graph.js';
-import { initFilters, resetFilters, buildFilterFn } from './filters.js';
-import { renderDetail, clearDetail } from './detail.js';
+// ── Telegram WebApp ───────────────────────────────────────────
+const tg = window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
 
-// ── State ────────────────────────────────────────────────────────
-let _groupId = null;
-let _userId = null;
-let _mode = 'participant'; // 'participant' | 'aggregate'
-let _membersData = null;
-let _layoutDir = 'TB';
+// ── Constants ─────────────────────────────────────────────────
+const RARITY_ORDER = { LEGENDARY: 0, EPIC: 1, RARE: 2, UNCOMMON: 3, COMMON: 4 };
+const RARITY_LABEL = {
+  COMMON: 'Обычная', UNCOMMON: 'Необычная', RARE: 'Редкая',
+  EPIC: 'Эпическая', LEGENDARY: 'Легендарная',
+};
 
-// ── Boot ─────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  _bindControls();
-
-  const params = new URLSearchParams(window.location.search);
-  _groupId = params.get('group');
-  _userId  = params.get('user');
-  _mode    = params.get('mode') || 'participant';
-
-  if (!_groupId) {
-    showSetup();
-    return;
-  }
-
-  _launchApp(params.get('focus'));
-});
-
-// ── Setup form ───────────────────────────────────────────────────
-function showSetup() {
-  document.getElementById('setup-overlay').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
+// ── Helpers ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-function hideSetup() {
-  document.getElementById('setup-overlay').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
+function plural(n, one, few, many) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
 }
 
-document.getElementById('setup-participant-btn').addEventListener('click', () => {
-  const g = document.getElementById('setup-group').value.trim();
-  const u = document.getElementById('setup-user').value.trim();
-  if (!g) { _setupError('Введите Group ID'); return; }
-  if (!u) { _setupError('Введите User ID для режима "Участник"'); return; }
-  _navigate({ group: g, user: u, mode: 'participant' });
-});
-
-document.getElementById('setup-aggregate-btn').addEventListener('click', () => {
-  const g = document.getElementById('setup-group').value.trim();
-  if (!g) { _setupError('Введите Group ID'); return; }
-  _navigate({ group: g, mode: 'aggregate' });
-});
-
-function _setupError(msg) {
-  const el = document.getElementById('setup-error');
-  el.textContent = msg;
-  el.classList.remove('hidden');
+function memberWord(n) {
+  return `${n} ${plural(n, 'участник', 'участника', 'участников')}`;
 }
 
-// ── Launch app ───────────────────────────────────────────────────
-async function _launchApp(focusCode) {
-  hideSetup();
-  initGraph(document.getElementById('cy'));
-  onNodeSelect((nodeData) => {
-    renderDetail(nodeData, getCurrentData());
-  });
+function render(html) {
+  document.getElementById('app').innerHTML = html;
+}
 
-  _bindGraphControls();
+function spinner() {
+  render('<div class="spinner-wrap"><div class="spinner"></div></div>');
+}
 
-  await _loadData();
+function showError(msg, onRetry) {
+  render(`
+    <div class="error-wrap">
+      <div class="empty__icon">⚠️</div>
+      <p>${esc(msg)}</p>
+      <button class="btn-retry" id="btn-retry">Повторить</button>
+    </div>
+  `);
+  document.getElementById('btn-retry').onclick = onRetry;
+}
 
-  if (focusCode) {
-    setTimeout(() => focusNode(focusCode), 300);
+// ── Router ────────────────────────────────────────────────────
+function route() {
+  const hash = location.hash || '#/';
+  const m = hash.match(/^#\/group\/([^/]+)$/);
+  if (m) {
+    showGroup(m[1]);
+  } else {
+    showGroups();
   }
 }
 
-// ── Load data ─────────────────────────────────────────────────────
-async function _loadData() {
-  _showLoading(true);
-  clearDetail();
+window.addEventListener('hashchange', route);
+window.addEventListener('load', route);
 
+// ── Screen 1: Groups ──────────────────────────────────────────
+async function showGroups() {
+  tg?.BackButton.hide();
+
+  spinner();
+
+  let groups;
   try {
-    if (_mode === 'aggregate') {
-      await _loadAggregate();
-    } else {
-      await _loadParticipant();
-    }
-
-    // Load members for selector (always, so admin can switch)
-    if (!_membersData) {
-      _membersData = await fetchMembers(_groupId).catch(() => ({ members: [] }));
-    }
-    _populateMemberSelect(_membersData.members);
-    _syncModeButtons();
-
-  } catch (err) {
-    _showError(err.message);
-  } finally {
-    _showLoading(false);
-  }
-}
-
-async function _loadParticipant() {
-  if (!_userId) {
-    _showError('User ID не задан. Вернитесь к настройкам.');
+    groups = await fetchGroups();
+  } catch (e) {
+    showError(e.message, showGroups);
     return;
   }
-  const data = await fetchTree(_groupId, _userId);
-  document.getElementById('group-title').textContent = data.group?.title || '';
-  initFilters(data.categories || [], (fn) => {
-    const visible = applyVisibility(fn);
-    document.getElementById('graph-empty').classList.toggle('hidden', visible > 0);
-  });
-  loadParticipant(data);
-}
 
-async function _loadAggregate() {
-  const data = await fetchAggregate(_groupId);
-  document.getElementById('group-title').textContent = data.group?.title || '';
-  initFilters(data.categories || [], (fn) => {
-    const visible = applyVisibility(fn);
-    document.getElementById('graph-empty').classList.toggle('hidden', visible > 0);
-  });
-  loadAggregate(data);
-}
-
-// ── Member selector ───────────────────────────────────────────────
-function _populateMemberSelect(members) {
-  const sel = document.getElementById('member-select');
-  if (_mode === 'aggregate' || members.length === 0) {
-    sel.style.display = 'none';
+  if (!groups.length) {
+    render(`
+      <div class="screen-header">
+        <h1>🏆 Family Achievements</h1>
+      </div>
+      <div class="empty">
+        <div class="empty__icon">🏠</div>
+        <p>Групп пока нет</p>
+      </div>
+    `);
     return;
   }
-  sel.style.display = '';
-  sel.innerHTML = '';
-  members.forEach((m) => {
-    const opt = document.createElement('option');
-    opt.value = m.user_id;
-    opt.textContent = m.display_name + (m.role === 'ADMIN' ? ' 👑' : '');
-    if (m.user_id === _userId) opt.selected = true;
-    sel.appendChild(opt);
+
+  const cards = groups.map(g => `
+    <a class="group-card" href="#/group/${esc(g.id)}">
+      <div class="group-card__info">
+        <div class="group-card__title">🏠 ${esc(g.title)}</div>
+        <div class="group-card__meta">${memberWord(g.member_count)}</div>
+      </div>
+      <div class="group-card__arrow">›</div>
+    </a>
+  `).join('');
+
+  render(`
+    <div class="screen-header">
+      <h1>🏆 Family Achievements</h1>
+      <div class="subtitle">Выбери группу</div>
+    </div>
+    <div class="list">${cards}</div>
+  `);
+}
+
+// ── Chain detection ───────────────────────────────────────────
+function findChains(achList, edges) {
+  const codes = new Set(achList.map(a => a.code));
+  const achByCode = Object.fromEntries(achList.map(a => [a.code, a]));
+
+  // Keep only edges within this category
+  const catEdges = edges.filter(e => codes.has(e.from_code) && codes.has(e.to_code));
+
+  // Undirected adjacency for connected components
+  const adj = {};
+  achList.forEach(a => { adj[a.code] = []; });
+  catEdges.forEach(e => {
+    adj[e.from_code].push(e.to_code);
+    adj[e.to_code].push(e.from_code);
   });
 
-  sel.addEventListener('change', () => {
-    _userId = sel.value;
-    _updateUrl();
-    _loadData();
+  // BFS connected components
+  const visited = new Set();
+  const chains = [];
+  achList.forEach(a => {
+    if (visited.has(a.code)) return;
+    const component = [];
+    const queue = [a.code];
+    while (queue.length) {
+      const code = queue.shift();
+      if (visited.has(code)) continue;
+      visited.add(code);
+      component.push(achByCode[code]);
+      adj[code].forEach(nb => { if (!visited.has(nb)) queue.push(nb); });
+    }
+    chains.push(component);
+  });
+
+  // Topological sort within each multi-node chain
+  const dirAdj = {};
+  const indegree = {};
+  achList.forEach(a => { dirAdj[a.code] = []; indegree[a.code] = 0; });
+  catEdges.forEach(e => { dirAdj[e.from_code].push(e.to_code); indegree[e.to_code]++; });
+
+  return chains.map(chain => {
+    if (chain.length <= 1) return chain;
+    const inDeg = Object.fromEntries(chain.map(a => [a.code, indegree[a.code]]));
+    const queue = chain.filter(a => inDeg[a.code] === 0).map(a => a.code);
+    const sorted = [];
+    while (queue.length) {
+      const code = queue.shift();
+      sorted.push(achByCode[code]);
+      dirAdj[code].forEach(nb => { if (--inDeg[nb] === 0) queue.push(nb); });
+    }
+    return sorted.length === chain.length ? sorted : chain;
   });
 }
 
-// ── Mode switch ───────────────────────────────────────────────────
-function _syncModeButtons() {
-  document.getElementById('mode-participant').classList.toggle('active', _mode === 'participant');
-  document.getElementById('mode-aggregate').classList.toggle('active', _mode === 'aggregate');
-}
+// ── Screen 2: Achievements ────────────────────────────────────
+async function showGroup(groupId) {
+  // Show BackButton in Telegram
+  if (tg?.BackButton) {
+    tg.BackButton.show();
+    tg.BackButton.offClick();  // clear previous listeners
+    tg.BackButton.onClick(() => { location.hash = '#/'; });
+  }
 
-// ── Controls ──────────────────────────────────────────────────────
-function _bindControls() {
-  document.getElementById('mode-participant').addEventListener('click', () => {
-    if (_mode === 'participant') return;
-    _mode = 'participant';
-    _updateUrl();
-    _loadData();
+  spinner();
+
+  let data;
+  try {
+    data = await fetchAggregate(groupId);
+  } catch (e) {
+    showError(e.message, () => showGroup(groupId));
+    return;
+  }
+
+  const { group, achievements, categories, edges, aggregate_state } = data;
+
+  // Build category lookup: code → name
+  const catName = {};
+  (categories || []).forEach(c => { catName[c.code] = c.name; });
+
+  // Group achievements by category, keeping API order for categories
+  const catOrder = [];
+  const byCategory = {};
+  achievements.forEach(a => {
+    const cat = a.category_code || '__none__';
+    if (!byCategory[cat]) {
+      byCategory[cat] = [];
+      catOrder.push(cat);
+    }
+    byCategory[cat].push(a);
   });
 
-  document.getElementById('mode-aggregate').addEventListener('click', () => {
-    if (_mode === 'aggregate') return;
-    _mode = 'aggregate';
-    _updateUrl();
-    _loadData();
+  // Helper: render a single achievement card
+  function achCardHtml(a) {
+    const state = aggregate_state[a.code] || { achieved_by: [] };
+    const icon = a.icon ? `<span class="ach-card__icon">${esc(a.icon)}</span>` : '';
+    const pts = a.points ? `<span class="ach-card__points">${a.points}⭐</span>` : '';
+    const repeatBadge = a.repeatable
+      ? `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>`
+      : '';
+    const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
+    const achieversList = state.achieved_by.length
+      ? `<div class="ach-card__achievers"><span class="achievers-label">Выполнили:</span> ${state.achieved_by.map(n => `<span class="achiever">${esc(n)}</span>`).join('')}</div>`
+      : '';
+    return `
+      <div class="ach-card" data-id="${esc(a.code)}">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-${esc(a.rarity)}"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              ${icon}
+              <span class="ach-card__title">${esc(a.title)}</span>
+              <span class="ach-card__rarity-dot dot-${esc(a.rarity)}"></span>
+            </div>
+            <div class="ach-card__meta">
+              ${pts}
+              <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
+              ${repeatBadge}
+            </div>
+          </div>
+        </div>
+        <div class="ach-card__detail">
+          <p class="ach-card__desc">${esc(a.description)}</p>
+          ${achieversList}
+        </div>
+      </div>
+    `;
+  }
+
+  // Render
+  let html = `
+    <div class="screen-header">
+      <h1>${esc(group.title)}</h1>
+      <div class="subtitle">${achievements.length} достижений</div>
+    </div>
+    <div class="list">
+  `;
+
+  catOrder.forEach(cat => {
+    const label = cat === '__none__' ? 'Без категории' : (catName[cat] || cat);
+    html += `<div class="cat-header">🏆 ${esc(label)}</div>`;
+
+    // Detect chains within this category
+    const chains = findChains(byCategory[cat], edges || []);
+
+    // Sort chains: multi-node chains first (by best rarity), then single achievements
+    chains.sort((cA, cB) => {
+      const isChainA = cA.length > 1 ? 0 : 1;
+      const isChainB = cB.length > 1 ? 0 : 1;
+      if (isChainA !== isChainB) return isChainA - isChainB;
+      const bestRarity = ch => Math.min(...ch.map(a => RARITY_ORDER[a.rarity] ?? 99));
+      const rd = bestRarity(cA) - bestRarity(cB);
+      return rd !== 0 ? rd : (cA[0].sort_order - cB[0].sort_order);
+    });
+
+    chains.forEach(chain => {
+      if (chain.length > 1) {
+        html += `<div class="chain-group">`;
+        html += `<div class="chain-header">⛓ Цепочка</div>`;
+        chain.forEach(a => { html += achCardHtml(a); });
+        html += `</div>`;
+      } else {
+        html += achCardHtml(chain[0]);
+      }
+    });
   });
 
-  document.getElementById('settings-btn').addEventListener('click', () => {
-    showSetup();
+  html += '</div>';
+  render(html);
+
+  // Accordion: tap card → toggle detail
+  document.querySelectorAll('.ach-card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
   });
-}
-
-function _bindGraphControls() {
-  document.getElementById('fit-btn').addEventListener('click', fitGraph);
-  document.getElementById('zoom-in-btn').addEventListener('click', zoomIn);
-  document.getElementById('zoom-out-btn').addEventListener('click', zoomOut);
-  document.getElementById('layout-dir-btn').addEventListener('click', () => {
-    _layoutDir = _layoutDir === 'TB' ? 'LR' : 'TB';
-    document.getElementById('layout-dir-btn').textContent = _layoutDir === 'TB' ? '↕' : '↔';
-    setDirection(_layoutDir);
-  });
-}
-
-// ── URL helpers ───────────────────────────────────────────────────
-function _updateUrl() {
-  const params = new URLSearchParams();
-  if (_groupId) params.set('group', _groupId);
-  if (_userId && _mode === 'participant') params.set('user', _userId);
-  params.set('mode', _mode);
-  const url = `${window.location.pathname}?${params.toString()}`;
-  window.history.pushState({}, '', url);
-}
-
-function _navigate(overrides) {
-  const params = new URLSearchParams();
-  const merged = { group: _groupId, user: _userId, mode: _mode, ...overrides };
-  if (merged.group) params.set('group', merged.group);
-  if (merged.user && merged.mode !== 'aggregate') params.set('user', merged.user);
-  if (merged.mode) params.set('mode', merged.mode);
-
-  window.history.pushState({}, '', `?${params.toString()}`);
-  _groupId = merged.group;
-  _userId  = merged.user || null;
-  _mode    = merged.mode || 'participant';
-  _membersData = null; // force reload
-
-  _launchApp(null);
-}
-
-// ── UI helpers ────────────────────────────────────────────────────
-function _showLoading(on) {
-  document.getElementById('graph-loading').style.display = on ? 'flex' : 'none';
-}
-
-function _showError(msg) {
-  const el = document.getElementById('graph-loading');
-  el.innerHTML = `<p style="color:#f87171;text-align:center;padding:20px">${msg}<br><br>
-    <button class="btn btn-secondary" onclick="location.reload()">Обновить</button></p>`;
-  el.style.display = 'flex';
 }
