@@ -42,6 +42,7 @@ class UserStateValue(BaseModel):
     status: Literal["LOCKED", "AVAILABLE", "ACHIEVED"]
     level: int
     achieved_at: str | None
+    cooldown_until: str | None = None  # ISO datetime while cooldown is active
 
 
 class TreeResponse(BaseModel):

@@ -519,3 +519,88 @@ html, body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ── Personal page: status badges ───────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 4px;
+}
+
+.status-achieved  { background: color-mix(in srgb, #4caf50 20%, transparent); color: #4caf50; }
+.status-locked    { background: color-mix(in srgb, var(--tg-hint) 15%, transparent); color: var(--tg-hint); }
+.status-cooldown  { background: color-mix(in srgb, #ff9800 20%, transparent); color: #ff9800; }
+
+/* Dim locked achievement cards */
+.ach-card--my.status-locked { opacity: 0.55; }
+
+/* Action buttons below title row */
+.ach-card__actions {
+  margin-top: 6px;
+}
+
+/* ── Claim inline form ───────────────────────────────────────── */
+.claim-form {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-form .form-textarea {
+  min-height: 70px;
+  font-size: 0.85rem;
+}
+
+.claim-form__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.claim-form__error {
+  color: #f44336;
+  font-size: 0.8rem;
+  padding: 4px 0;
+}
+
+/* ── Pending claims section ──────────────────────────────────── */
+.claims-section {
+  margin: 8px 16px 4px;
+  background: var(--tg-card);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.claims-section__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tg-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.claim-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--tg-hint) 15%, transparent);
+}
+
+.claim-item:last-child { border-bottom: none; }
+
+.claim-item__title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--tg-text);
+}
+
+.claim-item__meta {
+  font-size: 0.75rem;
+  color: var(--tg-hint);
+}

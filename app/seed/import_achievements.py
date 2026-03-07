@@ -120,6 +120,7 @@ async def _import(session: AsyncSession, data: dict) -> None:
         ach.rarity = a["rarity"]
         ach.repeatable = a.get("repeatable", False)
         ach.max_level = a.get("max_level")
+        ach.cooldown_hours = a.get("cooldown_hours")
         ach.icon = a.get("icon")
         ach.points = a.get("points")
         ach.is_active = a.get("is_active", True)

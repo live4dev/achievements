@@ -38,6 +38,7 @@ class AchievementCreate(BaseModel):
     rarity: str
     repeatable: bool = False
     max_level: int | None = None
+    cooldown_hours: int | None = None
     icon: str | None = None
     points: int | None = None
     sort_order: int = 0
@@ -50,6 +51,7 @@ class AchievementUpdate(BaseModel):
     rarity: str | None = None
     repeatable: bool | None = None
     max_level: int | None = None
+    cooldown_hours: int | None = None
     icon: str | None = None
     points: int | None = None
     sort_order: int | None = None
@@ -71,6 +73,7 @@ class AchievementAdminOut(BaseModel):
     rarity: str
     repeatable: bool
     max_level: int | None
+    cooldown_hours: int | None = None
     icon: str | None
     points: int | None
     sort_order: int

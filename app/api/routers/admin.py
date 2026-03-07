@@ -157,6 +157,7 @@ async def create_achievement_endpoint(body: AchievementCreate, session: SessionD
         rarity=body.rarity,
         repeatable=body.repeatable,
         max_level=body.max_level,
+        cooldown_hours=body.cooldown_hours,
         icon=body.icon,
         points=body.points,
         sort_order=body.sort_order,

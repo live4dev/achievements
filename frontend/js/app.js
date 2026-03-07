@@ -1,7 +1,8 @@
 /**
  * app.js — mobile SPA:
  *   #/                           → groups list
- *   #/group/{id}                 → achievements in group
+ *   #/group/{id}                 → achievements in group (aggregate)
+ *   #/group/{id}/me              → personal achievements + claim submission
  *   #/admin                      → admin home
  *   #/admin/categories           → category list
  *   #/admin/categories/new       → create category
@@ -77,6 +78,7 @@ async function route() {
   const hash = location.hash || '#/';
 
   let m;
+  if ((m = hash.match(/^#\/group\/([^/]+)\/me$/))) return showMyPage(m[1]);
   if ((m = hash.match(/^#\/group\/([^/]+)$/))) return showGroup(m[1]);
   if (hash === '#/admin') return showAdminHome();
   if (hash === '#/admin/categories') return showAdminCategories();
@@ -275,7 +277,10 @@ async function showGroup(groupId) {
   // Render
   let html = `
     <div class="screen-header">
-      <h1>${esc(group.title)}</h1>
+      <div class="screen-header__row">
+        <h1>${esc(group.title)}</h1>
+        <a class="btn-sm btn-primary" href="#/group/${esc(groupId)}/me">Мои ачивки</a>
+      </div>
       <div class="subtitle">${achievements.length} достижений</div>
     </div>
     <div class="list">
@@ -317,6 +322,245 @@ async function showGroup(groupId) {
   // Accordion: tap card → toggle detail
   document.querySelectorAll('.ach-card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+
+// ── Screen 3: Personal achievements page ─────────────────────
+async function showMyPage(groupId) {
+  if (tg?.BackButton) {
+    tg.BackButton.show();
+    tg.BackButton.offClick();
+    tg.BackButton.onClick(() => { location.hash = `#/group/${groupId}`; });
+  }
+
+  spinner();
+
+  let treeData, claimsData;
+  try {
+    [treeData, claimsData] = await Promise.all([
+      fetchMyTree(groupId),
+      fetchMyClaims(groupId),
+    ]);
+  } catch (e) {
+    showError(e.message, () => showMyPage(groupId));
+    return;
+  }
+
+  const { group, achievements, categories, edges, user_state } = treeData;
+
+  // Build category lookup from categories array
+  const catName = {};
+  const catIcon = {};
+  (categories || []).forEach(c => { catName[c.code] = c.name; catIcon[c.code] = c.icon; });
+
+  // Group achievements by category
+  const catOrder = [];
+  const byCategory = {};
+  achievements.forEach(a => {
+    const cat = a.category_code || '__none__';
+    if (!byCategory[cat]) {
+      byCategory[cat] = [];
+      catOrder.push(cat);
+    }
+    byCategory[cat].push(a);
+  });
+
+  // Pending claims map: achievement_code → claim_id
+  const pendingClaims = {};
+  claimsData.filter(c => c.status === 'SUBMITTED').forEach(c => {
+    pendingClaims[c.achievement_code] = c.id;
+  });
+
+  function achMyCardHtml(a) {
+    const state = user_state[a.code] || { status: 'LOCKED', level: 0 };
+    const icon = a.icon ? `<span class="ach-card__icon">${esc(a.icon)}</span>` : '';
+    const pts = a.points ? `<span class="ach-card__points">${a.points}⭐</span>` : '';
+    const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
+    let statusBadge = '';
+    let actionBtn = '';
+    const onCooldown = state.cooldown_until && new Date(state.cooldown_until) > new Date();
+    if (state.status === 'ACHIEVED' && !onCooldown) {
+      statusBadge = `<span class="status-badge status-achieved">✓ Получена${state.level > 1 ? ' ур.' + state.level : ''}</span>`;
+    } else if (onCooldown) {
+      const until = new Date(state.cooldown_until);
+      const hhmm = until.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const ddmm = until.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+      statusBadge = `<span class="status-badge status-achieved">✓ ур.${state.level}</span>`;
+      actionBtn = `<span class="status-badge status-cooldown">⏳ до ${ddmm} ${hhmm}</span>`;
+    } else if (state.status === 'AVAILABLE') {
+      if (pendingClaims[a.code]) {
+        actionBtn = `<button class="btn-sm btn-secondary btn-cancel-claim" data-claim="${esc(pendingClaims[a.code])}" data-code="${esc(a.code)}">⏳ Отменить заявку</button>`;
+      } else {
+        actionBtn = `<button class="btn-sm btn-primary btn-claim" data-code="${esc(a.code)}" data-title="${esc(a.title)}">Заявиться</button>`;
+      }
+    } else {
+      statusBadge = `<span class="status-badge status-locked">🔒 Заблокирована</span>`;
+    }
+    return `
+      <div class="ach-card ach-card--my status-${esc(state.status.toLowerCase())}" data-id="${esc(a.code)}">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-${esc(a.rarity)}"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              ${icon}
+              <span class="ach-card__title">${esc(a.title)}</span>
+              <span class="ach-card__rarity-dot dot-${esc(a.rarity)}"></span>
+            </div>
+            <div class="ach-card__meta">
+              ${pts}
+              <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
+              ${statusBadge}
+            </div>
+            ${actionBtn ? `<div class="ach-card__actions">${actionBtn}</div>` : ''}
+          </div>
+        </div>
+        <div class="ach-card__detail">
+          <p class="ach-card__desc">${esc(a.description)}</p>
+          <div class="claim-form" id="claim-form-${esc(a.code)}" hidden>
+            <textarea class="form-textarea claim-evidence" placeholder="Опишите подтверждение (необязательно)"></textarea>
+            <div class="claim-form__actions">
+              <button class="btn-sm btn-primary btn-submit-claim" data-code="${esc(a.code)}">Подать заявку</button>
+              <button class="btn-sm btn-secondary btn-cancel-form" data-code="${esc(a.code)}">Отмена</button>
+            </div>
+            <div class="claim-form__error" id="claim-err-${esc(a.code)}" hidden></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Render pending claims section
+  const pendingList = claimsData.filter(c => c.status === 'SUBMITTED');
+  let pendingSection = '';
+  if (pendingList.length) {
+    const rows = pendingList.map(c => `
+      <div class="claim-item" id="claim-item-${esc(c.id)}">
+        <div class="claim-item__info">
+          <div class="claim-item__title">${esc(c.achievement_title)}</div>
+          <div class="claim-item__meta">⏳ Ожидает рассмотрения</div>
+        </div>
+        <button class="btn-sm btn-secondary btn-cancel-claim-row" data-claim="${esc(c.id)}" data-code="${esc(c.achievement_code)}">Отменить</button>
+      </div>
+    `).join('');
+    pendingSection = `
+      <div class="claims-section">
+        <div class="claims-section__title">📋 Мои заявки</div>
+        ${rows}
+      </div>
+    `;
+  }
+
+  let html = `
+    <div class="screen-header">
+      <h1>🏅 Мои ачивки</h1>
+      <div class="subtitle">${esc(group.title)}</div>
+    </div>
+    ${pendingSection}
+    <div class="list">
+  `;
+
+  catOrder.forEach(cat => {
+    const label = catName[cat] || (cat === '__none__' ? 'Без категории' : cat);
+    const icon = catIcon[cat] ? catIcon[cat] : '🏆';
+    html += `<div class="cat-header">${icon} ${esc(label)}</div>`;
+    const chains = findChains(byCategory[cat], edges || []);
+    chains.sort((cA, cB) => {
+      const isChainA = cA.length > 1 ? 0 : 1;
+      const isChainB = cB.length > 1 ? 0 : 1;
+      if (isChainA !== isChainB) return isChainA - isChainB;
+      const bestRarity = ch => Math.min(...ch.map(a => RARITY_ORDER[a.rarity] ?? 99));
+      return bestRarity(cA) - bestRarity(cB);
+    });
+    chains.forEach(chain => {
+      if (chain.length > 1) {
+        html += `<div class="chain-group">`;
+        html += `<div class="chain-header">⛓ Цепочка</div>`;
+        chain.forEach(a => { html += achMyCardHtml(a); });
+        html += `</div>`;
+      } else {
+        html += achMyCardHtml(chain[0]);
+      }
+    });
+  });
+
+  html += '</div>';
+  render(html);
+
+  // Accordion: tap card → toggle detail
+  document.querySelectorAll('.ach-card--my').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('textarea')) return;
+      card.classList.toggle('open');
+    });
+  });
+
+  // "Заявиться" → show inline form
+  document.querySelectorAll('.btn-claim').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = btn.dataset.code;
+      const card = btn.closest('.ach-card--my');
+      card.classList.add('open');
+      document.getElementById(`claim-form-${code}`).hidden = false;
+      btn.closest('.ach-card__actions').style.display = 'none';
+    });
+  });
+
+  // "Отмена" form button
+  document.querySelectorAll('.btn-cancel-form').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = btn.dataset.code;
+      document.getElementById(`claim-form-${code}`).hidden = true;
+      const card = btn.closest('.ach-card--my');
+      card.querySelector('.ach-card__actions').style.display = '';
+    });
+  });
+
+  // "Подать заявку"
+  document.querySelectorAll('.btn-submit-claim').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const code = btn.dataset.code;
+      const form = document.getElementById(`claim-form-${code}`);
+      const errEl = document.getElementById(`claim-err-${code}`);
+      const evidenceText = form.querySelector('.claim-evidence').value.trim() || null;
+      btn.disabled = true;
+      errEl.hidden = true;
+      try {
+        await submitClaim(groupId, code, evidenceText);
+        showMyPage(groupId);  // reload
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Cancel claim buttons (in card actions)
+  document.querySelectorAll('.btn-cancel-claim').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      try {
+        await cancelClaim(groupId, btn.dataset.claim);
+        showMyPage(groupId);  // reload
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  // Cancel claim buttons (in pending section)
+  document.querySelectorAll('.btn-cancel-claim-row').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await cancelClaim(groupId, btn.dataset.claim);
+        showMyPage(groupId);  // reload
+      } catch (err) {
+        alert(err.message);
+      }
+    });
   });
 }
 
@@ -566,6 +810,10 @@ async function showAdminAchievementForm(code) {
           <label>Макс. уровень</label>
           <input id="f-maxlvl" class="form-input" type="number" value="${ach?.max_level ?? ''}" placeholder="—">
         </div>
+        <div class="form-group">
+          <label>Cooldown (ч)</label>
+          <input id="f-cooldown" class="form-input" type="number" min="1" value="${ach?.cooldown_hours ?? ''}" placeholder="—">
+        </div>
       </div>
       ${!isNew ? `<label class="form-check"><input id="f-active" type="checkbox" ${ach.is_active ? 'checked' : ''}> Активна</label>` : ''}
 
@@ -588,6 +836,7 @@ async function showAdminAchievementForm(code) {
       sort_order: parseInt(document.getElementById('f-order').value) || 0,
       repeatable: document.getElementById('f-repeat').checked,
       max_level: parseInt(document.getElementById('f-maxlvl').value) || null,
+      cooldown_hours: parseInt(document.getElementById('f-cooldown').value) || null,
     };
     if (!data.title) { showAdminError('Введите название'); return; }
     try {

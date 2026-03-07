@@ -155,6 +155,7 @@ class Achievement(Base):
     rarity: Mapped[str] = mapped_column(String(20), nullable=False)
     repeatable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     max_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cooldown_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
     icon: Mapped[str | None] = mapped_column(Text, nullable=True)
     points: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

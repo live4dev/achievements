@@ -77,8 +77,9 @@ async def create_achievement(
     rarity: str,
     repeatable: bool,
     max_level: int | None,
-    icon: str | None,
-    points: int | None,
+    cooldown_hours: int | None = None,
+    icon: str | None = None,
+    points: int | None = None,
     sort_order: int = 0,
 ) -> Achievement:
     ach = Achievement(
@@ -89,6 +90,7 @@ async def create_achievement(
         rarity=rarity,
         repeatable=repeatable,
         max_level=max_level,
+        cooldown_hours=cooldown_hours,
         icon=icon,
         points=points,
         sort_order=sort_order,

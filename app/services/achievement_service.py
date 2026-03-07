@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +11,7 @@ from app.repos.achievement_repo import (
     get_all_group_guas,
     get_user_guas,
 )
+from app.repos.claim_repo import get_last_approved_claims_batch
 from app.repos.group_repo import get_group_members
 from app.schemas.achievement import AchievementTreeNode, AchievementOut, CategoryOut, PrerequisiteOut, UserAchievementState
 from app.schemas.tree import (
@@ -137,20 +139,30 @@ async def get_user_tree_graph(
     achievements = await get_all_active_achievements(session)
     guas = await get_user_guas(session, group_id, user_id)
     categories = await get_all_categories(session)
+    last_approved = await get_last_approved_claims_batch(session, group_id, user_id)
 
     gua_map: dict[uuid.UUID, GroupUserAchievement] = {g.achievement_id: g for g in guas}
     achieved_map: dict[uuid.UUID, int] = {
         aid: g.level for aid, g in gua_map.items() if g.status == "ACHIEVED"
     }
 
+    now = datetime.now(tz=timezone.utc)
     user_state: dict[str, UserStateValue] = {}
     for ach in achievements:
         gua = gua_map.get(ach.id)
         status = compute_achievement_status(ach, gua, achieved_map)
+        cooldown_until: str | None = None
+        if ach.repeatable and ach.cooldown_hours:
+            last_ts = last_approved.get(ach.id)
+            if last_ts is not None:
+                available_at = last_ts + timedelta(hours=ach.cooldown_hours)
+                if now < available_at:
+                    cooldown_until = available_at.isoformat()
         user_state[ach.code] = UserStateValue(
             status=status,
             level=gua.level if gua else 0,
             achieved_at=gua.achieved_at.isoformat() if (gua and gua.achieved_at) else None,
+            cooldown_until=cooldown_until,
         )
 
     return TreeResponse(

@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from app.repos.claim_repo import (
     add_event,
     create_claim,
     get_claim_by_id,
+    get_last_approved_claim,
     get_submitted_claim,
 )
 from app.repos.group_repo import get_member
@@ -58,6 +59,14 @@ async def submit_claim(
         raise ClaimError("Ачивка ещё заблокирована: не выполнены необходимые условия.")
     if status == "ACHIEVED" and not achievement.repeatable:
         raise ClaimError("Ачивка уже получена и не является повторяемой.")
+    if achievement.repeatable and achievement.cooldown_hours:
+        last = await get_last_approved_claim(session, group_id, user_id, achievement_id)
+        if last and last.reviewed_at:
+            available_at = last.reviewed_at + timedelta(hours=achievement.cooldown_hours)
+            if datetime.now(tz=timezone.utc) < available_at:
+                raise ClaimError(
+                    f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
+                )
 
     # 4. Create claim
     claim = await create_claim(

@@ -62,6 +62,60 @@ async function apiAdmin(method, path, body) {
   return data;
 }
 
+// ── Personal (me) API ──────────────────────────────────────────
+
+async function apiPost(path, body) {
+  await ensureAuth();
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ..._token ? { Authorization: `Bearer ${_token}` } : {},
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+async function apiDelete(path) {
+  await ensureAuth();
+  const res = await fetch(path, {
+    method: 'DELETE',
+    headers: _token ? { Authorization: `Bearer ${_token}` } : {},
+  });
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+/** GET /api/groups/{groupId}/users/me/tree → TreeResponse */
+function fetchMyTree(groupId) {
+  return apiFetch(`/api/groups/${groupId}/users/me/tree`);
+}
+
+/** GET /api/groups/{groupId}/claims/me → list[WebClaimOut] */
+function fetchMyClaims(groupId) {
+  return apiFetch(`/api/groups/${groupId}/claims/me`);
+}
+
+/** POST /api/groups/{groupId}/claims → WebClaimOut */
+function submitClaim(groupId, achCode, evidenceText) {
+  return apiPost(`/api/groups/${groupId}/claims`, {
+    achievement_code: achCode,
+    evidence_text: evidenceText || null,
+  });
+}
+
+/** DELETE /api/groups/{groupId}/claims/{claimId} */
+function cancelClaim(groupId, claimId) {
+  return apiDelete(`/api/groups/${groupId}/claims/${claimId}`);
+}
+
+// ── Admin API ──────────────────────────────────────────────────
+
 function fetchAdminCategories()         { return apiAdmin('GET',    '/categories'); }
 function createCategory(data)           { return apiAdmin('POST',   '/categories', data); }
 function updateCategory(code, data)     { return apiAdmin('PATCH',  `/categories/${code}`, data); }

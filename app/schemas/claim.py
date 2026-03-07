@@ -21,3 +21,17 @@ class ClaimOut(BaseModel):
 class ClaimCreate(BaseModel):
     achievement_id: uuid.UUID
     evidence: dict = {}
+
+
+class WebClaimCreate(BaseModel):
+    achievement_code: str
+    evidence_text: str | None = None
+
+
+class WebClaimOut(BaseModel):
+    id: uuid.UUID
+    achievement_code: str
+    achievement_title: str
+    status: str
+    submitted_at: str
+    comment: str | None = None
