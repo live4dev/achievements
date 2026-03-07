@@ -5,30 +5,37 @@ categories:
   - code: school
     name: Школа
     description: Учёба, домашние задания и школьные результаты
+    icon: 📚
 
   - code: home
     name: Дом
     description: Порядок, уборка и бытовая ответственность
+    icon: 🏠
 
   - code: family
     name: Семья
     description: Отношения, совместные активности и забота о близких
+    icon: 👨‍👩‍👧‍👦
 
   - code: friends
     name: Друзья
     description: Дружба, встречи и совместный досуг
+    icon: 👫
 
   - code: hobby
     name: Хобби
     description: Творчество, сцена и развитие увлечений
+    icon: 🎨
 
   - code: health
     name: Здоровье / Спорт
     description: Физическая активность, закаливание и полезные привычки
+    icon: 💪
 
   - code: travel
     name: Путешествия
     description: Походы, поездки и новые впечатления
+    icon: ✈️
 
 achievements:
   # ── School

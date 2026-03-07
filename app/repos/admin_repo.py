@@ -24,8 +24,9 @@ async def create_category(
     code: str,
     name: str,
     description: str | None,
+    icon: str | None = None,
 ) -> Category:
-    cat = Category(code=code, name=name, description=description)
+    cat = Category(code=code, name=name, description=description, icon=icon)
     session.add(cat)
     await session.flush()
     return cat

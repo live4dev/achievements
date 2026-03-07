@@ -9,6 +9,7 @@ class CategoryOut(BaseModel):
     code: str
     name: str
     description: str | None
+    icon: str | None = None
     parent_id: uuid.UUID | None
 
     model_config = {"from_attributes": True}

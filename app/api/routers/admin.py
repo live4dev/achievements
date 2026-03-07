@@ -114,7 +114,7 @@ async def create_category_endpoint(body: CategoryCreate, session: SessionDep, _:
     existing = await get_category_by_code(session, body.code)
     if existing:
         raise HTTPException(400, detail=f"Категория с кодом «{body.code}» уже существует")
-    cat = await create_category(session, body.code, body.name, body.description)
+    cat = await create_category(session, body.code, body.name, body.description, body.icon)
     await session.commit()
     await session.refresh(cat)
     return cat

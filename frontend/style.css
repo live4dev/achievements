@@ -337,6 +337,13 @@ html, body {
 .admin-item--inactive { opacity: 0.5; }
 .admin-item--prereq { padding: 8px 0; }
 
+.admin-item__icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+}
+
 .admin-item__info { flex: 1; min-width: 0; }
 .admin-item__title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-item__meta { font-size: 0.75rem; color: var(--tg-hint); margin-top: 2px; }

@@ -9,11 +9,13 @@ class CategoryCreate(BaseModel):
     code: str
     name: str
     description: str | None = None
+    icon: str | None = None
 
 
 class CategoryUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
+    icon: str | None = None
 
 
 class CategoryAdminOut(BaseModel):
@@ -21,6 +23,7 @@ class CategoryAdminOut(BaseModel):
     code: str
     name: str
     description: str | None
+    icon: str | None = None
 
     model_config = {"from_attributes": True}
 

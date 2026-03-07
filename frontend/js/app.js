@@ -218,9 +218,10 @@ async function showGroup(groupId) {
 
   const { group, achievements, categories, edges, aggregate_state } = data;
 
-  // Build category lookup: code → name
+  // Build category lookup: code → name / icon
   const catName = {};
-  (categories || []).forEach(c => { catName[c.code] = c.name; });
+  const catIcon = {};
+  (categories || []).forEach(c => { catName[c.code] = c.name; catIcon[c.code] = c.icon; });
 
   // Group achievements by category, keeping API order for categories
   const catOrder = [];
@@ -282,7 +283,8 @@ async function showGroup(groupId) {
 
   catOrder.forEach(cat => {
     const label = cat === '__none__' ? 'Без категории' : (catName[cat] || cat);
-    html += `<div class="cat-header">🏆 ${esc(label)}</div>`;
+    const icon = cat !== '__none__' && catIcon[cat] ? catIcon[cat] : '🏆';
+    html += `<div class="cat-header">${icon} ${esc(label)}</div>`;
 
     // Detect chains within this category
     const chains = findChains(byCategory[cat], edges || []);
@@ -370,7 +372,7 @@ async function showAdminCategories() {
   const rows = cats.map(c => `
     <div class="admin-item">
       <div class="admin-item__info">
-        <div class="admin-item__title">${esc(c.name)}</div>
+        <div class="admin-item__title">${c.icon ? esc(c.icon) + ' ' : ''}${esc(c.name)}</div>
         <div class="admin-item__meta">${esc(c.code)}${c.description ? ' · ' + esc(c.description) : ''}</div>
       </div>
       <a class="btn-sm btn-secondary" href="#/admin/categories/${esc(c.code)}">✏️</a>
@@ -413,9 +415,15 @@ async function showAdminCategoryForm(code) {
         <label>Код</label>
         <input id="f-code" class="form-input" type="text" value="${esc(cat?.code ?? '')}" ${!isNew ? 'readonly' : ''} placeholder="school">
       </div>
-      <div class="form-group">
-        <label>Название</label>
-        <input id="f-name" class="form-input" type="text" value="${esc(cat?.name ?? '')}" placeholder="Школа">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Название</label>
+          <input id="f-name" class="form-input" type="text" value="${esc(cat?.name ?? '')}" placeholder="Школа">
+        </div>
+        <div class="form-group" style="max-width:90px">
+          <label>Иконка</label>
+          <input id="f-icon" class="form-input" type="text" value="${esc(cat?.icon ?? '')}" placeholder="📚">
+        </div>
       </div>
       <div class="form-group">
         <label>Описание</label>
@@ -431,6 +439,7 @@ async function showAdminCategoryForm(code) {
       code: document.getElementById('f-code').value.trim(),
       name: document.getElementById('f-name').value.trim(),
       description: document.getElementById('f-desc').value.trim() || null,
+      icon: document.getElementById('f-icon').value.trim() || null,
     };
     if (!data.name) { showAdminError('Введите название'); return; }
     try {
@@ -438,7 +447,7 @@ async function showAdminCategoryForm(code) {
         if (!data.code) { showAdminError('Введите код'); return; }
         await createCategory(data);
       } else {
-        await updateCategory(code, { name: data.name, description: data.description });
+        await updateCategory(code, { name: data.name, description: data.description, icon: data.icon });
       }
       location.hash = '#/admin/categories';
     } catch (e) { showAdminError(e.message); }

@@ -84,6 +84,7 @@ async def _import(session: AsyncSession, data: dict) -> None:
             session.add(cat)
         cat.name = c["name"]
         cat.description = c.get("description")
+        cat.icon = c.get("icon")
         await session.flush()
         cat_by_code[cat.code] = cat
 

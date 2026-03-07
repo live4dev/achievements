@@ -117,6 +117,7 @@ class Category(Base):
     code: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    icon: Mapped[str | None] = mapped_column(Text, nullable=True)
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("categories.id"), nullable=True
     )
