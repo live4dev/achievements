@@ -33,21 +33,18 @@ def main_menu_kb(is_admin: bool) -> InlineKeyboardMarkup:
         buttons.append(
             [InlineKeyboardButton("🧾 Заявки на подтверждение", callback_data="menu:admin_claims")]
         )
-        buttons.append(
-            [InlineKeyboardButton("⚙️ Управление ачивками", callback_data="menu:admin_panel")]
-        )
     buttons.append([InlineKeyboardButton("🔄 Сменить группу", callback_data="menu:change_group")])
     buttons.append([InlineKeyboardButton("🚪 Покинуть группу", callback_data="menu:leave_group")])
     return InlineKeyboardMarkup(buttons)
 
 
 def category_list_kb(
-    categories: list[tuple[str, int]],  # (category_name, count)
+    categories: list[tuple[str, str | None, int]],  # (category_name, icon, count)
     back_cb: str,
 ) -> InlineKeyboardMarkup:
     buttons = [
-        [InlineKeyboardButton(f"{name}  ({count})", callback_data=f"cat:{name}")]
-        for name, count in categories
+        [InlineKeyboardButton(f"{icon + ' ' if icon else ''}{name}  ({count})", callback_data=f"cat:{name}")]
+        for name, icon, count in categories
     ]
     buttons.append([InlineKeyboardButton("◀️ Назад", callback_data=back_cb)])
     return InlineKeyboardMarkup(buttons)

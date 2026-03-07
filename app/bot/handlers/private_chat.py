@@ -25,14 +25,6 @@ from telegram.ext import (
 
 from app.bot import keyboards as kb
 from app.bot.states import (
-    ADMIN_ACH_DETAIL,
-    ADMIN_ACH_INPUT,
-    ADMIN_ACH_LIST,
-    ADMIN_ACH_PREREQS,
-    ADMIN_ACH_WIZARD,
-    ADMIN_CAT_INPUT,
-    ADMIN_CAT_LIST,
-    ADMIN_PANEL,
     AWAIT_EVIDENCE,
     ADMIN_REJECT_INPUT,
     MAIN_MENU,
@@ -71,12 +63,14 @@ RARITY_LABEL = {
 }
 
 
-def _group_by_category(nodes: list) -> list[tuple[str, int]]:
-    cats: dict[str, int] = {}
+def _group_by_category(nodes: list) -> list[tuple[str, str | None, int]]:
+    cats: dict[str, tuple[str | None, int]] = {}
     for n in nodes:
         name = n.achievement.category_name or "Прочее"
-        cats[name] = cats.get(name, 0) + 1
-    return list(cats.items())
+        icon = n.achievement.category_icon
+        icon_stored, count = cats.get(name, (icon, 0))
+        cats[name] = (icon_stored, count + 1)
+    return [(name, icon, count) for name, (icon, count) in cats.items()]
 
 
 def _user_display(user) -> str:
@@ -280,6 +274,8 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         async with async_session_factory() as session:
             nodes = await get_user_achievements_by_status(session, group_id, user_id, status)
         nodes = [n for n in nodes if (n.achievement.category_name or "Прочее") == category_name]
+        cat_icon = nodes[0].achievement.category_icon if nodes else None
+        cat_label = f"{cat_icon} {category_name}" if cat_icon else f"📂 {category_name}"
         if not nodes:
             await query.edit_message_text(
                 f"В категории «{category_name}» нет ачивок.",
@@ -287,7 +283,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             )
         else:
             await query.edit_message_text(
-                f"📂 {category_name}\n\nВыберите ачивку:",
+                f"{cat_label}\n\nВыберите ачивку:",
                 reply_markup=kb.achievement_list_kb(nodes, back_cb="back:categories"),
             )
         return MAIN_MENU
@@ -362,13 +358,6 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                 reply_markup=kb.admin_claim_list_kb(claims),
             )
         return MAIN_MENU
-
-    if data == "menu:admin_panel":
-        if not context.user_data.get("is_admin"):
-            await query.answer("Нет доступа.", show_alert=True)
-            return MAIN_MENU
-        from app.bot.handlers.admin_panel import admin_panel_entry
-        return await admin_panel_entry(update, context)
 
     # ---- achievement detail ------------------------------------------------
     if data.startswith("ach:"):
@@ -713,17 +702,6 @@ async def _do_reject_claim(
 
 
 def build_private_conversation() -> ConversationHandler:
-    from app.bot.handlers.admin_panel import (
-        ADMIN_ACH_DETAIL_HANDLERS,
-        ADMIN_ACH_INPUT_HANDLERS,
-        ADMIN_ACH_LIST_HANDLERS,
-        ADMIN_ACH_PREREQS_HANDLERS,
-        ADMIN_ACH_WIZARD_HANDLERS,
-        ADMIN_CAT_INPUT_HANDLERS,
-        ADMIN_CAT_LIST_HANDLERS,
-        ADMIN_PANEL_HANDLERS,
-    )
-
     return ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
@@ -741,14 +719,6 @@ def build_private_conversation() -> ConversationHandler:
                 CommandHandler("skip", skip_reject_reason),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, receive_reject_reason),
             ],
-            ADMIN_PANEL: ADMIN_PANEL_HANDLERS,
-            ADMIN_CAT_LIST: ADMIN_CAT_LIST_HANDLERS,
-            ADMIN_CAT_INPUT: ADMIN_CAT_INPUT_HANDLERS,
-            ADMIN_ACH_LIST: ADMIN_ACH_LIST_HANDLERS,
-            ADMIN_ACH_DETAIL: ADMIN_ACH_DETAIL_HANDLERS,
-            ADMIN_ACH_INPUT: ADMIN_ACH_INPUT_HANDLERS,
-            ADMIN_ACH_WIZARD: ADMIN_ACH_WIZARD_HANDLERS,
-            ADMIN_ACH_PREREQS: ADMIN_ACH_PREREQS_HANDLERS,
         },
         fallbacks=[CommandHandler("start", start)],
         per_chat=True,

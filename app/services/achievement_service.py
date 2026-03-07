@@ -58,6 +58,7 @@ async def get_user_achievement_tree(
         )
         ach_out = AchievementOut.model_validate(ach)
         ach_out.category_name = ach.category.name if ach.category else None
+        ach_out.category_icon = ach.category.icon if ach.category else None
         nodes.append(
             AchievementTreeNode(
                 achievement=ach_out,
