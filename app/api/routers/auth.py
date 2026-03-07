@@ -15,15 +15,17 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user_id: int
+    is_admin: bool
 
 
 @router.post("/auth", response_model=AuthResponse)
 async def auth(body: AuthRequest):
     if settings.SKIP_AUTH:
         uid = body.dev_user_id or 0
-        return AuthResponse(token=create_access_token(uid), user_id=uid)
+        return AuthResponse(token=create_access_token(uid), user_id=uid, is_admin=uid in settings.ADMIN_IDS)
     try:
         user = verify_init_data(body.init_data)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
-    return AuthResponse(token=create_access_token(user["id"]), user_id=user["id"])
+    uid = user["id"]
+    return AuthResponse(token=create_access_token(uid), user_id=uid, is_admin=uid in settings.ADMIN_IDS)

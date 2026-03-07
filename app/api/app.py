@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routers.achievements import router as achievements_router
+from app.api.routers.admin import router as admin_router
 from app.api.routers.auth import router as auth_router
 from app.core.config import settings
 
@@ -33,6 +34,7 @@ def create_fastapi_app() -> FastAPI:
     )
     app.include_router(auth_router)
     app.include_router(achievements_router)
+    app.include_router(admin_router)
 
     # Serve frontend static files (must be mounted last)
     if _FRONTEND_DIR.exists():

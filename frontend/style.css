@@ -293,6 +293,179 @@ html, body {
 .badge-EPIC      { border-color: var(--rarity-epic);      color: var(--rarity-epic); }
 .badge-LEGENDARY { border-color: var(--rarity-legendary); color: var(--rarity-legendary); }
 
+/* ── Admin: header row ───────────────────────────────────────── */
+.screen-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-link {
+  font-size: 1.2rem;
+  text-decoration: none;
+  padding: 4px;
+  line-height: 1;
+}
+
+/* ── Admin: menu items (home) ────────────────────────────────── */
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--tg-card);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--tg-text);
+  margin-bottom: 8px;
+}
+
+.admin-menu-item__icon { font-size: 1.4rem; }
+.admin-menu-item__label { flex: 1; font-size: 1rem; font-weight: 600; }
+.admin-menu-item__arrow { color: var(--tg-hint); font-size: 1.2rem; }
+
+/* ── Admin: list items ───────────────────────────────────────── */
+.admin-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--tg-hint) 15%, transparent);
+}
+
+.admin-item--inactive { opacity: 0.5; }
+.admin-item--prereq { padding: 8px 0; }
+
+.admin-item__info { flex: 1; min-width: 0; }
+.admin-item__title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-item__meta { font-size: 0.75rem; color: var(--tg-hint); margin-top: 2px; }
+
+.badge-inactive {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tg-hint) 20%, transparent);
+  color: var(--tg-hint);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── Admin: form ─────────────────────────────────────────────── */
+.admin-form {
+  padding: 0 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-error {
+  background: color-mix(in srgb, #f44336 15%, transparent);
+  color: #f44336;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  color: var(--tg-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.form-input, .form-select, .form-textarea {
+  background: var(--tg-card);
+  border: 1px solid color-mix(in srgb, var(--tg-hint) 30%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--tg-text);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--tg-accent);
+}
+
+.form-input[readonly] { opacity: 0.55; }
+.form-input--sm { width: 72px; flex-shrink: 0; }
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-select { appearance: none; cursor: pointer; }
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.form-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--tg-accent);
+}
+
+.form-section {
+  border-top: 1px solid color-mix(in srgb, var(--tg-hint) 20%, transparent);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-section__title {
+  font-size: 0.8rem;
+  color: var(--tg-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hint-text {
+  color: var(--tg-hint);
+  font-size: 0.85rem;
+  padding: 8px 0;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn-primary, .btn-secondary, .btn-danger {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary  { background: var(--tg-accent); color: #fff; }
+.btn-secondary { background: color-mix(in srgb, var(--tg-hint) 20%, transparent); color: var(--tg-text); }
+.btn-danger   { background: #f44336; color: #fff; }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+
 /* ── Chain group ─────────────────────────────────────────────── */
 .chain-group {
   border-left: 2px solid var(--tg-accent);

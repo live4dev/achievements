@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production"
     JWT_EXPIRE_SECONDS: int = 86400
     SKIP_AUTH: bool = False
+    ADMIN_IDS: list[int] = []
 
 
 settings = Settings()
