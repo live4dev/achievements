@@ -1,22 +1,6 @@
 version: "3.9"
 
 services:
-  # postgres:
-  #   image: postgres:15-alpine
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_USER: achievements
-  #     POSTGRES_PASSWORD: achievements
-  #     POSTGRES_DB: achievements
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U achievements"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
 
   api:
     build: .
@@ -26,9 +10,6 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
     command: >
       sh -c "alembic upgrade head && python web.py"
 
@@ -41,6 +22,3 @@ services:
     depends_on:
       - api
     command: python bot.py
-
-volumes:
-  postgres_data:
