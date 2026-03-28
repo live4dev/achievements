@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1c1c1e">
+  <title>UI Kit — Family Achievements</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* ── UI Kit chrome ───────────────────────────────────────────── */
+    .uk-page {
+      max-width: 420px;
+      margin: 0 auto;
+      padding-bottom: 48px;
+    }
+
+    .uk-section {
+      padding: 24px 16px 8px;
+    }
+
+    .uk-section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--tg-hint);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid color-mix(in srgb, var(--tg-hint) 20%, transparent);
+    }
+
+    .uk-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+
+    .uk-swatch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .uk-swatch__dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .uk-swatch__label {
+      font-size: 0.78rem;
+    }
+
+    .uk-swatch__value {
+      font-size: 0.72rem;
+      color: var(--tg-hint);
+      margin-left: 4px;
+    }
+
+    .uk-label {
+      font-size: 0.68rem;
+      color: var(--tg-hint);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+
+    .uk-type-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .uk-card-preview {
+      background: var(--tg-card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 8px;
+    }
+
+    .uk-divider {
+      height: 1px;
+      background: color-mix(in srgb, var(--tg-hint) 15%, transparent);
+      margin: 4px 0;
+    }
+
+    /* toc */
+    .uk-toc {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .uk-toc a {
+      font-size: 0.85rem;
+      color: var(--tg-accent);
+      text-decoration: none;
+      padding: 2px 0;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+<div class="uk-page">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="screen-header">
+    <div class="screen-header__row">
+      <h1>UI Kit</h1>
+    </div>
+    <div class="subtitle">Family Achievements — component reference</div>
+  </div>
+
+  <!-- ── TOC ────────────────────────────────────────────────────── -->
+  <nav class="uk-toc">
+    <a href="#colors">Colors</a>
+    <a href="#typography">Typography</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#badges">Badges &amp; Status</a>
+    <a href="#cards">Cards</a>
+    <a href="#achievement-card">Achievement Card</a>
+    <a href="#forms">Forms</a>
+    <a href="#admin">Admin Components</a>
+    <a href="#states">States</a>
+  </nav>
+
+  <!-- ── Colors ─────────────────────────────────────────────────── -->
+  <section class="uk-section" id="colors">
+    <div class="uk-section-title">Colors</div>
+
+    <div class="uk-label">Theme</div>
+    <div class="uk-swatch">
+      <div class="uk-swatch__dot" style="background:#1c1c1e;border:1px solid #444"></div>
+      <span class="uk-swatch__label">Background<span class="uk-swatch__value">--tg-bg · #1c1c1e</span></span>
+    </div>
+    <div class="uk-swatch">
+      <div class="uk-swatch__dot" style="background:#2c2c2e"></div>
+      <span class="uk-swatch__label">Card<span class="uk-swatch__value">--tg-card · #2c2c2e</span></span>
+    </div>
+    <div class="uk-swatch">
+      <div class="uk-swatch__dot" style="background:#ffffff"></div>
+      <span class="uk-swatch__label">Text<span class="uk-swatch__value">--tg-text · #ffffff</span></span>
+    </div>
+    <div class="uk-swatch">
+      <div class="uk-swatch__dot" style="background:#8e8e93"></div>
+      <span class="uk-swatch__label">Hint<span class="uk-swatch__value">--tg-hint · #8e8e93</span></span>
+    </div>
+    <div class="uk-swatch">
+      <div class="uk-swatch__dot" style="background:#007aff"></div>
+      <span class="uk-swatch__label">Accent<span class="uk-swatch__value">--tg-accent · #007aff</span></span>
+    </div>
+
+    <div class="uk-label" style="margin-top:14px">Rarity</div>
+    <div class="uk-swatch"><div class="uk-swatch__dot strip-COMMON"></div><span class="uk-swatch__label">Common<span class="uk-swatch__value">#9e9e9e</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot strip-UNCOMMON"></div><span class="uk-swatch__label">Uncommon<span class="uk-swatch__value">#4caf50</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot strip-RARE"></div><span class="uk-swatch__label">Rare<span class="uk-swatch__value">#2196f3</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot strip-EPIC"></div><span class="uk-swatch__label">Epic<span class="uk-swatch__value">#9c27b0</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot strip-LEGENDARY"></div><span class="uk-swatch__label">Legendary<span class="uk-swatch__value">#ff9800</span></span></div>
+
+    <div class="uk-label" style="margin-top:14px">Semantic</div>
+    <div class="uk-swatch"><div class="uk-swatch__dot" style="background:#4caf50"></div><span class="uk-swatch__label">Success<span class="uk-swatch__value">#4caf50</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot" style="background:#f44336"></div><span class="uk-swatch__label">Danger<span class="uk-swatch__value">#f44336</span></span></div>
+    <div class="uk-swatch"><div class="uk-swatch__dot" style="background:#ff9800"></div><span class="uk-swatch__label">Warning / Cooldown<span class="uk-swatch__value">#ff9800</span></span></div>
+  </section>
+
+  <!-- ── Typography ─────────────────────────────────────────────── -->
+  <section class="uk-section" id="typography">
+    <div class="uk-section-title">Typography</div>
+
+    <div class="uk-type-row">
+      <div class="uk-label">Screen title — 1.2rem 700</div>
+      <h1 style="font-size:1.2rem;font-weight:700;letter-spacing:-0.3px">Достижения семьи</h1>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Card title — 0.95rem 600</div>
+      <span style="font-size:0.95rem;font-weight:600">Первые шаги</span>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Body — 0.85rem / 1.5</div>
+      <span style="font-size:0.85rem;line-height:1.5;color:var(--tg-hint)">Описание достижения. Дополнительный текст с деталями и условиями получения.</span>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Meta / small — 0.78rem hint</div>
+      <span style="font-size:0.78rem;color:var(--tg-hint)">★ 50 очков</span>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Subtitle — 0.8rem hint</div>
+      <span class="subtitle" style="position:static">3 участника</span>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Category label — 0.75rem uppercase</div>
+      <div class="cat-header" style="padding:0">Приключения</div>
+    </div>
+    <div class="uk-type-row">
+      <div class="uk-label">Hint text — 0.85rem hint</div>
+      <div class="hint-text" style="padding:0">Выберите категорию для фильтрации</div>
+    </div>
+  </section>
+
+  <!-- ── Buttons ────────────────────────────────────────────────── -->
+  <section class="uk-section" id="buttons">
+    <div class="uk-section-title">Buttons</div>
+
+    <div class="uk-label">Full width</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+      <button class="btn-primary" style="width:100%">Primary</button>
+      <button class="btn-secondary" style="width:100%">Secondary</button>
+      <button class="btn-danger" style="width:100%">Danger</button>
+    </div>
+
+    <div class="uk-label">Inline</div>
+    <div class="uk-row">
+      <button class="btn-primary">Primary</button>
+      <button class="btn-secondary">Secondary</button>
+      <button class="btn-danger">Danger</button>
+    </div>
+
+    <div class="uk-label">Small (.btn-sm)</div>
+    <div class="uk-row">
+      <button class="btn-primary btn-sm">Primary sm</button>
+      <button class="btn-secondary btn-sm">Secondary sm</button>
+      <button class="btn-danger btn-sm">Danger sm</button>
+    </div>
+
+    <div class="uk-label" style="margin-top:8px">Retry</div>
+    <div class="uk-row">
+      <button class="btn-retry">Retry</button>
+    </div>
+  </section>
+
+  <!-- ── Badges & Status ────────────────────────────────────────── -->
+  <section class="uk-section" id="badges">
+    <div class="uk-section-title">Badges &amp; Status</div>
+
+    <div class="uk-label">Rarity badges (.badge-{RARITY})</div>
+    <div class="uk-row" style="margin-bottom:12px">
+      <span class="badge badge-COMMON">Common</span>
+      <span class="badge badge-UNCOMMON">Uncommon</span>
+      <span class="badge badge-RARE">Rare</span>
+      <span class="badge badge-EPIC">Epic</span>
+      <span class="badge badge-LEGENDARY">Legendary</span>
+    </div>
+
+    <div class="uk-label">Status badges (.status-badge)</div>
+    <div class="uk-row" style="margin-bottom:12px">
+      <span class="status-badge status-achieved">✓ Получено</span>
+      <span class="status-badge status-locked">🔒 Заблокировано</span>
+      <span class="status-badge status-cooldown">⏳ Кулдаун</span>
+    </div>
+
+    <div class="uk-label">Inactive badge</div>
+    <div class="uk-row" style="margin-bottom:12px">
+      <span class="badge-inactive">неактивно</span>
+    </div>
+
+    <div class="uk-label">Rarity dots</div>
+    <div class="uk-row" style="align-items:center;gap:12px">
+      <div class="ach-card__rarity-dot dot-COMMON"></div>
+      <div class="ach-card__rarity-dot dot-UNCOMMON"></div>
+      <div class="ach-card__rarity-dot dot-RARE"></div>
+      <div class="ach-card__rarity-dot dot-EPIC"></div>
+      <div class="ach-card__rarity-dot dot-LEGENDARY"></div>
+    </div>
+
+    <div class="uk-label" style="margin-top:12px">Achiever chips</div>
+    <div style="margin-bottom:8px">
+      <span class="achiever">Мария</span>
+      <span class="achiever">Иван</span>
+      <span class="achiever">Алёна</span>
+    </div>
+  </section>
+
+  <!-- ── Cards ──────────────────────────────────────────────────── -->
+  <section class="uk-section" id="cards">
+    <div class="uk-section-title">Cards</div>
+
+    <div class="uk-label">Group card</div>
+    <div class="list" style="padding:0 0 12px;gap:8px">
+      <a class="group-card">
+        <div class="group-card__info">
+          <div class="group-card__title">Семья Ивановых</div>
+          <div class="group-card__meta">4 участника</div>
+        </div>
+        <div class="group-card__arrow">›</div>
+      </a>
+      <a class="group-card">
+        <div class="group-card__info">
+          <div class="group-card__title">Клуб путешественников — очень длинное название группы</div>
+          <div class="group-card__meta">12 участников</div>
+        </div>
+        <div class="group-card__arrow">›</div>
+      </a>
+    </div>
+
+    <div class="uk-label">Progress bar</div>
+    <div class="uk-card-preview">
+      <div class="ach-card__progress">
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:30%"></div></div>
+        <div class="progress-label">1 / 3 участников</div>
+      </div>
+      <div class="ach-card__progress" style="margin-top:10px">
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:75%"></div></div>
+        <div class="progress-label">3 / 4 участников</div>
+      </div>
+      <div class="ach-card__progress" style="margin-top:10px">
+        <div class="progress-bar"><div class="progress-bar__fill" style="width:100%"></div></div>
+        <div class="progress-label">4 / 4 участников</div>
+      </div>
+    </div>
+
+    <div class="uk-label">Pending claims section</div>
+    <div class="claims-section" style="margin:0 0 8px">
+      <div class="claims-section__title">На проверке</div>
+      <div class="claim-item">
+        <div>
+          <div class="claim-item__title">🎯 Первые шаги</div>
+          <div class="claim-item__meta">Мария · 3 дня назад</div>
+        </div>
+        <div class="uk-row" style="margin:0">
+          <button class="btn-primary btn-sm">✓</button>
+          <button class="btn-danger btn-sm">✗</button>
+        </div>
+      </div>
+      <div class="claim-item">
+        <div>
+          <div class="claim-item__title">📚 Читатель</div>
+          <div class="claim-item__meta">Иван · сегодня</div>
+        </div>
+        <div class="uk-row" style="margin:0">
+          <button class="btn-primary btn-sm">✓</button>
+          <button class="btn-danger btn-sm">✗</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Achievement Card ───────────────────────────────────────── -->
+  <section class="uk-section" id="achievement-card">
+    <div class="uk-section-title">Achievement Card</div>
+
+    <div class="uk-label">Common — closed</div>
+    <div class="list" style="padding:0 0 8px;gap:6px">
+      <div class="ach-card">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-COMMON"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              <span class="ach-card__icon">🚶</span>
+              <span class="ach-card__title">Первые шаги</span>
+              <span class="ach-card__rarity-dot dot-COMMON"></span>
+            </div>
+            <div class="ach-card__meta">
+              <span class="ach-card__points">★ 10</span>
+              <span class="badge badge-COMMON">Common</span>
+              <div class="ach-card__progress">
+                <div class="progress-bar"><div class="progress-bar__fill" style="width:50%"></div></div>
+                <div class="progress-label">2 / 4</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-label">Legendary — open (with detail)</div>
+    <div class="list" style="padding:0 0 8px;gap:6px">
+      <div class="ach-card open">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-LEGENDARY"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              <span class="ach-card__icon">🏆</span>
+              <span class="ach-card__title">Легенда семьи</span>
+              <span class="ach-card__rarity-dot dot-LEGENDARY"></span>
+            </div>
+            <div class="ach-card__meta">
+              <span class="ach-card__points">★ 500</span>
+              <span class="badge badge-LEGENDARY">Legendary</span>
+            </div>
+          </div>
+        </div>
+        <div class="ach-card__detail">
+          <div class="ach-card__desc">Получите все достижения в категории «Путешествия» и посетите 10 разных городов вместе с семьёй.</div>
+          <div class="ach-card__achievers">
+            <span class="achievers-label">Получили:</span>
+            <span class="achiever">Иван</span>
+            <span class="achiever">Мария</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-label">All rarities</div>
+    <div class="list" style="padding:0 0 8px;gap:6px">
+      <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-COMMON"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">🌱</span><span class="ach-card__title">Common</span><span class="ach-card__rarity-dot dot-COMMON"></span></div><div class="ach-card__meta"><span class="ach-card__points">★ 10</span><span class="badge badge-COMMON">Common</span></div></div></div></div>
+      <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-UNCOMMON"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">🌿</span><span class="ach-card__title">Uncommon</span><span class="ach-card__rarity-dot dot-UNCOMMON"></span></div><div class="ach-card__meta"><span class="ach-card__points">★ 50</span><span class="badge badge-UNCOMMON">Uncommon</span></div></div></div></div>
+      <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-RARE"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">💎</span><span class="ach-card__title">Rare</span><span class="ach-card__rarity-dot dot-RARE"></span></div><div class="ach-card__meta"><span class="ach-card__points">★ 150</span><span class="badge badge-RARE">Rare</span></div></div></div></div>
+      <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-EPIC"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">⚡</span><span class="ach-card__title">Epic</span><span class="ach-card__rarity-dot dot-EPIC"></span></div><div class="ach-card__meta"><span class="ach-card__points">★ 300</span><span class="badge badge-EPIC">Epic</span></div></div></div></div>
+      <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-LEGENDARY"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">🏆</span><span class="ach-card__title">Legendary</span><span class="ach-card__rarity-dot dot-LEGENDARY"></span></div><div class="ach-card__meta"><span class="ach-card__points">★ 500</span><span class="badge badge-LEGENDARY">Legendary</span></div></div></div></div>
+    </div>
+
+    <div class="uk-label">Personal — with status (.ach-card--my)</div>
+    <div class="list" style="padding:0 0 8px;gap:6px">
+      <div class="ach-card ach-card--my">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-UNCOMMON"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              <span class="ach-card__icon">📚</span>
+              <span class="ach-card__title">Книголюб</span>
+              <span class="ach-card__rarity-dot dot-UNCOMMON"></span>
+              <span class="status-badge status-achieved">✓ Получено</span>
+            </div>
+            <div class="ach-card__meta">
+              <span class="ach-card__points">★ 50</span>
+              <span class="badge badge-UNCOMMON">Uncommon</span>
+            </div>
+            <div class="ach-card__actions">
+              <button class="btn-primary btn-sm">Подать заявку</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ach-card ach-card--my status-locked">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-RARE"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              <span class="ach-card__icon">🔒</span>
+              <span class="ach-card__title">Заблокировано</span>
+              <span class="ach-card__rarity-dot dot-RARE"></span>
+              <span class="status-badge status-locked">🔒 Заблокировано</span>
+            </div>
+            <div class="ach-card__meta">
+              <span class="ach-card__points">★ 150</span>
+              <span class="badge badge-RARE">Rare</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ach-card ach-card--my">
+        <div class="ach-card__main">
+          <div class="ach-card__strip strip-EPIC"></div>
+          <div class="ach-card__body">
+            <div class="ach-card__title-row">
+              <span class="ach-card__icon">⏳</span>
+              <span class="ach-card__title">На кулдауне</span>
+              <span class="ach-card__rarity-dot dot-EPIC"></span>
+              <span class="status-badge status-cooldown">⏳ 5 дней</span>
+            </div>
+            <div class="ach-card__meta">
+              <span class="ach-card__points">★ 300</span>
+              <span class="badge badge-EPIC">Epic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-label">Chain group</div>
+    <div style="padding:0 0 8px">
+      <div class="chain-header">⛓ Цепочка</div>
+      <div class="chain-group">
+        <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-COMMON"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">1️⃣</span><span class="ach-card__title">Шаг первый</span></div><div class="ach-card__meta"><span class="ach-card__points">★ 10</span><span class="badge badge-COMMON">Common</span></div></div></div></div>
+        <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-UNCOMMON"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">2️⃣</span><span class="ach-card__title">Шаг второй</span></div><div class="ach-card__meta"><span class="ach-card__points">★ 30</span><span class="badge badge-UNCOMMON">Uncommon</span></div></div></div></div>
+        <div class="ach-card"><div class="ach-card__main"><div class="ach-card__strip strip-RARE"></div><div class="ach-card__body"><div class="ach-card__title-row"><span class="ach-card__icon">3️⃣</span><span class="ach-card__title">Финал цепочки</span></div><div class="ach-card__meta"><span class="ach-card__points">★ 80</span><span class="badge badge-RARE">Rare</span></div></div></div></div>
+      </div>
+    </div>
+
+    <div class="uk-label">Inline claim form</div>
+    <div class="ach-card open">
+      <div class="ach-card__main">
+        <div class="ach-card__strip strip-UNCOMMON"></div>
+        <div class="ach-card__body">
+          <div class="ach-card__title-row">
+            <span class="ach-card__icon">🏅</span>
+            <span class="ach-card__title">Спортсмен</span>
+            <span class="ach-card__rarity-dot dot-UNCOMMON"></span>
+          </div>
+          <div class="ach-card__meta">
+            <span class="ach-card__points">★ 50</span>
+            <span class="badge badge-UNCOMMON">Uncommon</span>
+          </div>
+          <div class="ach-card__actions">
+            <div class="claim-form">
+              <textarea class="form-textarea" placeholder="Опишите ваши достижения…" style="min-height:70px;font-size:0.85rem"></textarea>
+              <div class="claim-form__actions">
+                <button class="btn-primary btn-sm">Отправить</button>
+                <button class="btn-secondary btn-sm">Отмена</button>
+              </div>
+              <div class="claim-form__error">Пожалуйста, добавьте описание</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Forms ──────────────────────────────────────────────────── -->
+  <section class="uk-section" id="forms">
+    <div class="uk-section-title">Forms</div>
+
+    <div class="admin-form" style="padding:0 0 16px">
+      <div class="form-group">
+        <label>Название</label>
+        <input class="form-input" type="text" placeholder="Введите название" value="Книголюб">
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <textarea class="form-textarea" placeholder="Описание достижения…">Прочитайте 10 книг за год</textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Очки</label>
+          <input class="form-input form-input--sm" type="number" value="50">
+        </div>
+        <div class="form-group">
+          <label>Редкость</label>
+          <select class="form-select">
+            <option>COMMON</option>
+            <option selected>UNCOMMON</option>
+            <option>RARE</option>
+            <option>EPIC</option>
+            <option>LEGENDARY</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Readonly</label>
+        <input class="form-input" type="text" readonly value="a1b2c3d4-e5f6">
+      </div>
+      <label class="form-check">
+        <input type="checkbox" checked>
+        Активно
+      </label>
+      <div class="form-section">
+        <div class="form-section__title">Дополнительно</div>
+        <div class="form-group">
+          <label>Кулдаун (дней)</label>
+          <input class="form-input" type="number" placeholder="0" value="7">
+        </div>
+        <div class="hint-text">Минимальное количество дней между повторными заявками.</div>
+      </div>
+      <div class="admin-error">Ошибка: не удалось сохранить. Проверьте заполненность полей.</div>
+      <div class="uk-row">
+        <button class="btn-primary">Сохранить</button>
+        <button class="btn-secondary">Отмена</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Admin ──────────────────────────────────────────────────── -->
+  <section class="uk-section" id="admin">
+    <div class="uk-section-title">Admin Components</div>
+
+    <div class="uk-label">Menu items</div>
+    <div style="margin-bottom:12px">
+      <a class="admin-menu-item">
+        <span class="admin-menu-item__icon">🏅</span>
+        <span class="admin-menu-item__label">Достижения</span>
+        <span class="admin-menu-item__arrow">›</span>
+      </a>
+      <a class="admin-menu-item">
+        <span class="admin-menu-item__icon">🗂</span>
+        <span class="admin-menu-item__label">Категории</span>
+        <span class="admin-menu-item__arrow">›</span>
+      </a>
+    </div>
+
+    <div class="uk-label">List items (.admin-item)</div>
+    <div class="uk-card-preview" style="padding:0 14px">
+      <div class="admin-item">
+        <span class="admin-item__icon">📚</span>
+        <div class="admin-item__info">
+          <div class="admin-item__title">Книголюб</div>
+          <div class="admin-item__meta">UNCOMMON · ★ 50 · Образование</div>
+        </div>
+        <button class="btn-secondary btn-sm">✏️</button>
+      </div>
+      <div class="admin-item admin-item--inactive">
+        <span class="admin-item__icon">🚫</span>
+        <div class="admin-item__info">
+          <div class="admin-item__title">Неактивное<span class="badge-inactive">неактивно</span></div>
+          <div class="admin-item__meta">COMMON · ★ 5 · Разное</div>
+        </div>
+        <button class="btn-secondary btn-sm">✏️</button>
+      </div>
+      <div class="admin-item admin-item--prereq">
+        <span class="admin-item__icon">↳</span>
+        <div class="admin-item__info">
+          <div class="admin-item__title">Предпосылка: Шаг первый</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── States ─────────────────────────────────────────────────── -->
+  <section class="uk-section" id="states">
+    <div class="uk-section-title">States</div>
+
+    <div class="uk-label">Loading spinner</div>
+    <div class="spinner-wrap" style="height:80px">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="uk-label">Empty state</div>
+    <div class="empty">
+      <div class="empty__icon">🏅</div>
+      Достижений пока нет
+    </div>
+
+    <div class="uk-label">Error state</div>
+    <div class="error-wrap">
+      <p>⚠️ Не удалось загрузить данные</p>
+      <button class="btn-retry">Повторить</button>
+    </div>
+  </section>
+
+</div><!-- .uk-page -->
+</div><!-- #app -->
+</body>
+</html>
