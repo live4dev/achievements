@@ -14,14 +14,16 @@ async function showAdminAchievements() {
         </div>
         <div class="admin-item__meta">
           <span class="badge badge-${esc(a.rarity)}">${esc(RARITY_LABEL[a.rarity] || a.rarity)}</span>
+          ${a.auto_grant ? ' · ' + '<span class="badge badge-auto">⚡ Авто</span>' : ''}
+                    ${a.repeatable? ' · ' + `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>`: ''}
           ${a.category_code ? ' · ' + esc(a.category_code) : ''}
-          ${a.points ? ' · ' + a.points + '⭐' : ''}
+          ${a.points ? ' · ' + a.points + ' ⭐' : ''}
         </div>
       </div>
       <a class="btn-sm btn-secondary" href="#/admin/achievements/${esc(a.code)}">✏️</a>
     </div>
   `).join('');
-
+  
   render(`
     <div class="screen-header">
       <div class="screen-header__row">
@@ -101,9 +103,7 @@ async function showAdminAchievementForm(code) {
         </div>
       </div>
       <div class="form-row">
-        <label class="form-check">
-          <input id="f-repeat" type="checkbox" ${ach?.repeatable ? 'checked' : ''}> Повторяемая
-        </label>
+        
         <div class="form-group">
           <label>Макс. уровень</label>
           <input id="f-maxlvl" class="form-input" type="number" value="${ach?.max_level ?? ''}" placeholder="—">
@@ -112,6 +112,14 @@ async function showAdminAchievementForm(code) {
           <label>Cooldown (ч)</label>
           <input id="f-cooldown" class="form-input" type="number" min="1" value="${ach?.cooldown_hours ?? ''}" placeholder="—">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-check">
+          <input id="f-repeat" type="checkbox" ${ach?.repeatable ? 'checked' : ''}> Повторяемая
+        </label>
+        <label class="form-check">
+          <input id="f-autogrant" type="checkbox" ${ach?.auto_grant ? 'checked' : ''}> ⚡ Выдаётся автоматически
+        </label>
       </div>
       ${!isNew ? `<label class="form-check"><input id="f-active" type="checkbox" ${ach.is_active ? 'checked' : ''}> Активна</label>` : ''}
 
@@ -133,6 +141,7 @@ async function showAdminAchievementForm(code) {
       points: parseInt(document.getElementById('f-points').value) || null,
       sort_order: parseInt(document.getElementById('f-order').value) || 0,
       repeatable: document.getElementById('f-repeat').checked,
+      auto_grant: document.getElementById('f-autogrant').checked,
       max_level: parseInt(document.getElementById('f-maxlvl').value) || null,
       cooldown_hours: parseInt(document.getElementById('f-cooldown').value) || null,
     };

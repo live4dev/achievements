@@ -45,6 +45,7 @@ async function showMyPage(groupId) {
     const icon = a.icon ? `<span class="ach-card__icon">${esc(a.icon)}</span>` : '';
     const pts = a.points ? `<span class="ach-card__points">${a.points}⭐</span>` : '';
     const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
+    const autoBadge = a.auto_grant ? `<span class="badge badge-auto">⚡ Auto</span>` : '';
     let statusBadge = '';
     let actionBtn = '';
     const onCooldown = state.cooldown_until && new Date(state.cooldown_until) > new Date();
@@ -57,7 +58,9 @@ async function showMyPage(groupId) {
       statusBadge = `<span class="status-badge status-achieved">✓ ур.${state.level}</span>`;
       actionBtn = `<span class="status-badge status-cooldown">⏳ до ${ddmm} ${hhmm}</span>`;
     } else if (state.status === 'AVAILABLE') {
-      if (pendingClaims[a.code]) {
+      if (a.auto_grant) {
+        actionBtn = `<span class="status-badge status-auto">⚡ Выдаётся автоматически</span>`;
+      } else if (pendingClaims[a.code]) {
         actionBtn = `<button class="btn-sm btn-secondary btn-cancel-claim" data-claim="${esc(pendingClaims[a.code])}" data-code="${esc(a.code)}">⏳ Отменить заявку</button>`;
       } else {
         actionBtn = `<button class="btn-sm btn-primary btn-claim" data-code="${esc(a.code)}" data-title="${esc(a.title)}">Заявиться</button>`;
@@ -78,6 +81,7 @@ async function showMyPage(groupId) {
             <div class="ach-card__meta">
               ${pts}
               <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
+              ${autoBadge}
               ${statusBadge}
             </div>
             ${actionBtn ? `<div class="ach-card__actions">${actionBtn}</div>` : ''}

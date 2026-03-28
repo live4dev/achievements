@@ -81,6 +81,7 @@ async def create_achievement(
     icon: str | None = None,
     points: int | None = None,
     sort_order: int = 0,
+    auto_grant: bool = False,
 ) -> Achievement:
     ach = Achievement(
         code=code,
@@ -94,6 +95,7 @@ async def create_achievement(
         icon=icon,
         points=points,
         sort_order=sort_order,
+        auto_grant=auto_grant,
     )
     session.add(ach)
     await session.flush()

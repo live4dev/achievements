@@ -160,6 +160,7 @@ class Achievement(Base):
     points: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    auto_grant: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     category: Mapped["Category"] = relationship(back_populates="achievements")
     prerequisites: Mapped[list["AchievementPrerequisite"]] = relationship(

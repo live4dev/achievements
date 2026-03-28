@@ -35,10 +35,11 @@ async function showGroup(groupId) {
   function achCardHtml(a) {
     const state = aggregate_state[a.code] || { achieved_by: [] };
     const icon = a.icon ? `<span class="ach-card__icon">${esc(a.icon)}</span>` : '';
-    const pts = a.points ? `<span class="ach-card__points">${a.points}⭐</span>` : '';
+    const pts = a.points ? `<span class="ach-card__points">${a.points} ⭐</span>` : '';
     const repeatBadge = a.repeatable
       ? `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>`
       : '';
+    const autoBadge = a.auto_grant ? `<span class="badge badge-auto">⚡ Авто</span>` : '';
     const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
     const achieversList = state.achieved_by.length
       ? `<div class="ach-card__achievers"><span class="achievers-label">Выполнили:</span> ${state.achieved_by.map(n => `<span class="achiever">${esc(n)}</span>`).join('')}</div>`
@@ -57,6 +58,7 @@ async function showGroup(groupId) {
               ${pts}
               <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
               ${repeatBadge}
+              ${autoBadge}
             </div>
           </div>
         </div>

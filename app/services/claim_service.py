@@ -8,6 +8,7 @@ from app.models.orm import AchievementClaim, Group, User, Achievement
 from app.repos.achievement_repo import (
     compute_achievement_status,
     get_achievement_by_id,
+    get_all_active_achievements,
     get_user_guas,
     upsert_gua_approved,
 )
@@ -86,6 +87,60 @@ async def submit_claim(
     return claim
 
 
+async def _process_auto_grants(
+    session: AsyncSession,
+    group_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> list[dict]:
+    """
+    Award all auto_grant achievements whose prerequisites are now satisfied.
+    Loops until no new grants fire (supports chained cascades).
+    Returns list of dicts: [{"achievement": ach, "level": int}, ...]
+    """
+    granted: list[dict] = []
+    newly_granted_ids: set[uuid.UUID] = set()
+
+    while True:
+        all_achievements = await get_all_active_achievements(session)
+        auto_grant_achs = [a for a in all_achievements if a.auto_grant]
+        if not auto_grant_achs:
+            break
+
+        guas = await get_user_guas(session, group_id, user_id)
+        achieved_map: dict[uuid.UUID, int] = {
+            g.achievement_id: g.level
+            for g in guas
+            if g.status == "ACHIEVED"
+        }
+        gua_map = {g.achievement_id: g for g in guas}
+
+        new_this_round = []
+        for ach in auto_grant_achs:
+            if ach.id in newly_granted_ids:
+                continue
+            status = compute_achievement_status(ach, gua_map.get(ach.id), achieved_map)
+            if status == "AVAILABLE":
+                new_this_round.append(ach)
+
+        if not new_this_round:
+            break
+
+        for ach in new_this_round:
+            gua = await upsert_gua_approved(session, group_id, user_id, ach)
+            await add_event(
+                session,
+                group_id=group_id,
+                user_id=user_id,
+                achievement_id=ach.id,
+                event_type="ADMIN_GRANTED",
+                payload={"reason": "auto_grant", "level": gua.level},
+            )
+            granted.append({"achievement": ach, "level": gua.level})
+            newly_granted_ids.add(ach.id)
+
+    return granted
+
+
 async def approve_claim(
     session: AsyncSession,
     claim_id: uuid.UUID,
@@ -123,6 +178,9 @@ async def approve_claim(
         event_type="CLAIM_APPROVED",
         payload={"claim_id": str(claim.id), "level": gua.level},
     )
+
+    auto_granted = await _process_auto_grants(session, claim.group_id, claim.user_id)
+
     await session.commit()
     await session.refresh(claim)
     logger.info("Claim approved: %s by admin %s", claim_id, admin_user_id)
@@ -133,6 +191,7 @@ async def approve_claim(
         "user": claim.user,
         "achievement": claim.achievement,
         "level": gua.level,
+        "auto_granted": auto_granted,
     }
 
 

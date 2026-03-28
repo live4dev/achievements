@@ -30,6 +30,7 @@ class AchievementOut(BaseModel):
     points: int | None
     is_active: bool
     sort_order: int
+    auto_grant: bool = False
 
     model_config = {"from_attributes": True}
 

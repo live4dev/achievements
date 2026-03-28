@@ -390,6 +390,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             level_text = f"\n<b>Уровень:</b> {state.level}{max_txt}"
 
         points_text = f"\n<b>Очки:</b> {ach.points}" if ach.points else ""
+        auto_grant_text = "\n<b>Авто-выдача:</b> ⚡ Да" if ach.auto_grant else ""
 
         text = (
             f"{kb.RARITY_EMOJI.get(ach.rarity, '')} <b>{ach.title}</b>\n"
@@ -397,6 +398,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             f"{ach.description}"
             f"{level_text}"
             f"{points_text}"
+            f"{auto_grant_text}"
             f"{prereqs_text}"
         )
 
@@ -412,7 +414,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             text,
             reply_markup=kb.achievement_detail_kb(
                 str(ach_id),
-                can_claim=(state.status == "AVAILABLE"),
+                can_claim=(state.status == "AVAILABLE" and not ach.auto_grant),
                 back_cb=back_cb,
             ),
             parse_mode="HTML",
@@ -551,6 +553,37 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                     )
                 except Exception as e:
                     logger.warning("Could not notify group chat: %s", e)
+
+            # Send notifications for auto-granted achievements
+            for ag in result.get("auto_granted", []):
+                ag_ach = ag["achievement"]
+                ag_level = ag["level"]
+                ag_level_text = f" (уровень {ag_level})" if ag_ach.repeatable else ""
+                try:
+                    await context.bot.send_message(
+                        chat_id=user.tg_user_id,
+                        text=(
+                            f"⚡ Ачивка <b>{ag_ach.title}</b> выдана автоматически{ag_level_text}!\n"
+                            f"Поздравляем!"
+                        ),
+                        parse_mode="HTML",
+                    )
+                except Exception as e:
+                    logger.warning("Could not DM user for auto_grant %s: %s", user.tg_user_id, e)
+                if group.telegram_chat_id:
+                    try:
+                        mention = f"@{user.username}" if user.username else f"<b>{_user_display(user)}</b>"
+                        ag_icon_part = f"{ag_ach.icon} " if ag_ach.icon else ""
+                        await context.bot.send_message(
+                            chat_id=group.telegram_chat_id,
+                            text=(
+                                f"⚡ {mention} автоматически получил(а) ачивку "
+                                f"«<b>{ag_ach.title}</b>» {ag_icon_part}({ag_ach.rarity})!"
+                            ),
+                            parse_mode="HTML",
+                        )
+                    except Exception as e:
+                        logger.warning("Could not notify group for auto_grant: %s", e)
 
             await query.answer("✅ Заявка подтверждена!", show_alert=True)
         except ClaimError as e:

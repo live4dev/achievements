@@ -1,28 +1,28 @@
 # Auto-Grant Achievements
 
-## Описание
+## Description
 
-Достижение с флагом `auto_grant = true` выдаётся пользователю **автоматически** — без подачи заявки и подтверждения администратора — в момент, когда все его пресреквизиты выполнены.
+An achievement with the `auto_grant = true` flag is awarded to the user **automatically** — without submitting a claim or requiring administrator approval — at the moment when all of its prerequisites are satisfied.
 
-Используется для наград за завершение цепочки достижений.
+It is used for rewards granted upon completion of an achievement chain.
 
-## Как работает
+## How it works
 
-1. Администратор подтверждает обычную заявку (`approve_claim`).
-2. После записи результата вызывается `_process_auto_grants(session, group_id, user_id)`.
-3. Функция загружает все активные `auto_grant`-достижения и вычисляет их статус для пользователя.
-4. Если статус `AVAILABLE` — достижение выдаётся через `upsert_gua_approved()` и логируется событием `ADMIN_GRANTED` с `{"reason": "auto_grant"}`.
-5. Цикл повторяется до тех пор, пока новых выдач нет (поддержка каскада цепочек).
-6. Всё происходит в одной транзакции с оригинальным подтверждением.
+1. An administrator approves a regular claim (`approve_claim`).
+2. After the result is recorded, `_process_auto_grants(session, group_id, user_id)` is called.
+3. The function loads all active `auto_grant` achievements and calculates their status for the user.
+4. If the status is `AVAILABLE`, the achievement is granted via `upsert_gua_approved()`, and an `ADMIN_GRANTED` event is logged with `{"reason": "auto_grant"}`.
+5. The cycle repeats until no new grants are made (to support chained cascades).
+6. Everything happens within the same transaction as the original approval.
 
-## Настройка в YAML
+## YAML Configuration
 
 ```yaml
 - code: chain_complete
-  title: Цепочка выполнена
+  title: Chain Complete
   category: health
   rarity: EPIC
-  auto_grant: true          # ← флаг авто-выдачи
+  auto_grant: true          # ← auto-grant flag
   points: 100
   prerequisites:
     - code: step_one
@@ -33,20 +33,20 @@
       min_level: 1
 ```
 
-## Поведение в интерфейсах
+## Interface Behavior
 
-| Место | Поведение |
-| --- | --- |
-| Telegram-бот, каталог `/achievements` | Показывается `⚡` после названия |
-| Telegram-бот, список ачивок | Показывается `⚡` перед названием в кнопке |
-| Telegram-бот, детальная карточка | Строка «Авто-выдача: ⚡ Да» + нет кнопки «Заявиться» |
-| Уведомление при авто-выдаче | Отдельное сообщение пользователю и в группу с `⚡` |
-| Веб-интерфейс, карточка | Бейдж `⚡ Авто` в мета-строке |
-| Веб-интерфейс, личная страница | Бейдж `⚡ Авто` + статус «⚡ Выдаётся автоматически» вместо кнопки «Заявиться» |
-| Веб-интерфейс, админ-форма | Чекбокс «⚡ Авто-выдача» |
-| Telegram-бот, админ-панель | Кнопка «⚡ Авто: ВКЛ/ВЫКЛ» + строка «Авто-выдача» в деталях |
+| Location                              | Behavior                                                                        |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+| Telegram bot, `/achievements` catalog | Shows `⚡` after the title                                                       |
+| Telegram bot, achievement list        | Shows `⚡` before the title in the button                                        |
+| Telegram bot, detail card             | Line “Auto-grant: ⚡ Yes” + no “Claim” button                                    |
+| Notification on auto-grant            | Separate message to the user and to the group with `⚡`                          |
+| Web interface, card                   | Badge `⚡ Auto` in the meta row                                                  |
+| Web interface, profile page           | Badge `⚡ Auto` + status “⚡ Granted automatically” instead of the “Claim” button |
+| Web interface, admin form             | Checkbox “⚡ Auto-grant”                                                         |
+| Telegram bot, admin panel             | Button “⚡ Auto: ON/OFF” + line “Auto-grant” in details                          |
 
-## Ограничения
+## Limitations
 
-- `auto_grant`-достижение не должно иметь пресреквизитов, которые сами являются `auto_grant` в длинных каскадах — теоретически поддерживается, но стоит избегать для простоты отладки.
-- Авто-выдача срабатывает только при подтверждении заявки через бота. Прямая выдача через `/grant` авто-выдачу **не триггерит**.
+* An `auto_grant` achievement should not have prerequisites that are themselves `auto_grant` in long cascades — this is theoretically supported, but it is best avoided to simplify debugging.
+* Auto-grant is triggered only when a claim is approved through the bot. A direct grant via `/grant` does **not** trigger auto-grant.

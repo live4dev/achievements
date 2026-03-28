@@ -30,6 +30,7 @@ class AchievementNode(BaseModel):
     icon: str | None
     sort_order: int
     points: int | None
+    auto_grant: bool = False
 
 
 class EdgeOut(BaseModel):

@@ -70,7 +70,8 @@ def achievement_list_kb(
 
         rarity_emoji = RARITY_EMOJI.get(ach.rarity, "")
         icon = f"{ach.icon} " if ach.icon else ""
-        label = f"{rarity_emoji} {icon}{ach.title}"
+        auto_prefix = "⚡ " if getattr(ach, "auto_grant", False) else ""
+        label = f"{auto_prefix}{rarity_emoji} {icon}{ach.title}"
         buttons.append([InlineKeyboardButton(label, callback_data=f"ach:{ach.id}")])
 
     buttons.append([InlineKeyboardButton("◀️ Назад", callback_data=back_cb)])
@@ -193,7 +194,7 @@ def admin_ach_list_kb(achievements: list) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(buttons)
 
 
-def admin_ach_detail_kb(ach_id, is_active: bool = True) -> InlineKeyboardMarkup:
+def admin_ach_detail_kb(ach_id, is_active: bool = True, auto_grant: bool = False) -> InlineKeyboardMarkup:
     aid = str(ach_id)
     buttons = [
         [
@@ -212,6 +213,8 @@ def admin_ach_detail_kb(ach_id, is_active: bool = True) -> InlineKeyboardMarkup:
     ]
     if is_active:
         buttons.append([InlineKeyboardButton("🗑 Деактивировать", callback_data=f"adm_deact:{aid}")])
+    toggle_label = "⚡ Авто: ВКЛ → ВЫКЛ" if auto_grant else "⚡ Авто: ВЫКЛ → ВКЛ"
+    buttons.append([InlineKeyboardButton(toggle_label, callback_data=f"adm_toggle_autogrant:{aid}")])
     buttons.append([InlineKeyboardButton("◀️ Список", callback_data="adm_ach_list")])
     return InlineKeyboardMarkup(buttons)
 

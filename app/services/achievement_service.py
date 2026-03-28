@@ -111,6 +111,7 @@ def _to_ach_node(ach: Achievement) -> AchievementNode:
         icon=ach.icon,
         sort_order=ach.sort_order,
         points=ach.points,
+        auto_grant=ach.auto_grant,
     )
 
 

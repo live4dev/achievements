@@ -260,6 +260,7 @@ async def _build_ach_detail_text(ach: Achievement) -> str:
         if titles:
             prereqs_text = ", ".join(titles)
     status_label = "✅ Активна" if ach.is_active else "❌ Неактивна"
+    auto_grant_line = "⚡ Да" if ach.auto_grant else "Нет"
     return (
         f"🏆 {icon_part}<b>{ach.title}</b>\n"
         f"Код: <code>{ach.code}</code>\n"
@@ -269,6 +270,7 @@ async def _build_ach_detail_text(ach: Achievement) -> str:
         f"Иконка: {ach.icon or '—'}\n"
         f"Повторяемая: {rep_text}\n"
         f"Статус: {status_label}\n"
+        f"Авто-выдача: {auto_grant_line}\n"
         f"Пресреквизиты: {prereqs_text}"
     )
 
@@ -295,7 +297,7 @@ async def _show_ach_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     text = await _build_ach_detail_text(ach)
     await query.edit_message_text(
         text,
-        reply_markup=kb.admin_ach_detail_kb(ach_id, ach.is_active),
+        reply_markup=kb.admin_ach_detail_kb(ach_id, ach.is_active, ach.auto_grant),
         parse_mode="HTML",
     )
     return ADMIN_ACH_DETAIL
@@ -365,6 +367,21 @@ async def admin_ach_detail_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
             await deactivate_achievement_safe(session, ach_id)
         await query.answer("Ачивка деактивирована.", show_alert=True)
         return await _show_ach_list(update, context)
+
+    if data.startswith("adm_toggle_autogrant:"):
+        ach_id = uuid.UUID(data.split(":", 1)[1])
+        context.user_data["admin_ach_id"] = str(ach_id)
+        try:
+            async with async_session_factory() as session:
+                ach = await session.get(Achievement, ach_id)
+                if not ach:
+                    await query.answer("Ачивка не найдена.", show_alert=True)
+                    return ADMIN_ACH_DETAIL
+                await update_achievement_safe(session, ach_id, "auto_grant", not ach.auto_grant)
+        except AdminError as e:
+            await query.answer(str(e), show_alert=True)
+            return ADMIN_ACH_DETAIL
+        return await _show_ach_detail(update, context)
 
     # Inline field selection
     if data == "adm_af:rarity":

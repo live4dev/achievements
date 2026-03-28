@@ -125,6 +125,7 @@ async def _import(session: AsyncSession, data: dict) -> None:
         ach.points = a.get("points")
         ach.is_active = a.get("is_active", True)
         ach.sort_order = a.get("sort_order", 0)
+        ach.auto_grant = a.get("auto_grant", False)
 
         await session.flush()
         ach_by_code[ach.code] = ach

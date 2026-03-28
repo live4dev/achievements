@@ -42,6 +42,7 @@ class AchievementCreate(BaseModel):
     icon: str | None = None
     points: int | None = None
     sort_order: int = 0
+    auto_grant: bool = False
 
 
 class AchievementUpdate(BaseModel):
@@ -56,6 +57,7 @@ class AchievementUpdate(BaseModel):
     points: int | None = None
     sort_order: int | None = None
     is_active: bool | None = None
+    auto_grant: bool | None = None
 
 
 class PrereqOut(BaseModel):
@@ -78,6 +80,7 @@ class AchievementAdminOut(BaseModel):
     points: int | None
     sort_order: int
     is_active: bool
+    auto_grant: bool = False
     prerequisites: list[PrereqOut] = []
 
     model_config = {"from_attributes": True}
