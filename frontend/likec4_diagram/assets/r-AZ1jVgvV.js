@@ -1,0 +1,1 @@
+import{j as o}from"./vendors-CwlMtw8m.js";import{x as t,y as i}from"./i-CsV_hGf5.js";import{a1 as s}from"./likec4-faKKclO4.js";import"./e-irPS45k9.js";function m(){const e=t(),r=s();return o.jsx(i,{view:r,onNavigateToProject:e})}export{m as ProjectsOverviewPage};

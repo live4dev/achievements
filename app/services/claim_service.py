@@ -72,12 +72,23 @@ async def submit_claim(
                     f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
                 )
     if achievement.burnable and achievement.cooldown_hours:
+        # Prefer last approved claim's reviewed_at — covers both within-period and
+        # post-grant cooldown when the achievement was earned through the claim flow.
+        # Fall back to gua.achieved_at when period_start is None (admin-granted burnables
+        # have no claim record but achieved_at is still set).
+        last = await get_last_approved_claim(session, group_id, user_id, achievement_id)
         gua_for_cd = gua_map.get(achievement_id)
-        if gua_for_cd and gua_for_cd.achieved_at and gua_for_cd.period_start is None:
-            achieved_at = gua_for_cd.achieved_at
-            if achieved_at.tzinfo is None:
-                achieved_at = achieved_at.replace(tzinfo=timezone.utc)
-            available_at = achieved_at + timedelta(hours=achievement.cooldown_hours)
+        ref_time = None
+        if last and last.reviewed_at:
+            ref_time = last.reviewed_at
+            if ref_time.tzinfo is None:
+                ref_time = ref_time.replace(tzinfo=timezone.utc)
+        elif gua_for_cd and gua_for_cd.achieved_at and gua_for_cd.period_start is None:
+            ref_time = gua_for_cd.achieved_at
+            if ref_time.tzinfo is None:
+                ref_time = ref_time.replace(tzinfo=timezone.utc)
+        if ref_time is not None:
+            available_at = ref_time + timedelta(hours=achievement.cooldown_hours)
             if datetime.now(tz=timezone.utc) < available_at:
                 raise ClaimError(
                     f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."

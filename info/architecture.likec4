@@ -101,7 +101,7 @@ model {
       technology 'Python 3.12, FastAPI, Uvicorn'
 
       component restEndpoints 'REST Endpoints' {
-        description 'GET /api/groups, /members, /users/{id}/tree, /tree/aggregate, /categories'
+        description 'GET /api/groups, /members, /users/{id}/tree, /tree/aggregate, /categories. POST /api/auth. CRUD /api/admin/categories, /achievements, /prerequisites.'
         technology 'FastAPI Router'
       }
 
@@ -111,12 +111,17 @@ model {
       }
 
       component claimService 'Claim Service' {
-        description 'submit_claim, approve_claim, reject_claim. Транзакция в БД → уведомление через бота.'
+        description 'submit_claim, approve_claim, reject_claim. Транзакция в БД → уведомление через бота. Поддерживает burnable-ачивки: сжигает уровень при нарушении streak (required_count / period_days).'
         technology 'SQLAlchemy async'
       }
 
+      component authService 'Auth Service' {
+        description 'POST /api/auth — верификация Telegram WebApp initData HMAC, выдача JWT-токена.'
+        technology 'JWT, python-jose'
+      }
+
       component adminService 'Admin Service' {
-        description 'Безопасные CRUD-обёртки для категорий и ачивок, toggle prerequisite с cycle detection.'
+        description 'Безопасные CRUD-обёртки для категорий и ачивок (включая burnable: required_count / period_days), toggle prerequisite с cycle detection. Защищён JWT + ADMIN_IDS.'
         technology 'SQLAlchemy async'
       }
 
@@ -126,7 +131,7 @@ model {
       }
 
       component frontend 'Web Frontend' {
-        description 'SPA: каталог групп, дерево ачивок, фильтры, детальная панель.'
+        description 'SPA: каталог групп, дерево ачивок, фильтры, детальная панель. Admin-панель: CRUD категорий и ачивок (JWT-авторизация через Telegram WebApp initData).'
         technology 'Vanilla JS, Cytoscape.js, cytoscape-dagre'
       }
     }
@@ -149,6 +154,7 @@ model {
     bot.groupHandlers -> api.repos 'читает участников и ачивки'
     bot.privateHandlers -> api.achievementService 'get_user_achievements_by_status'
 
+    api.restEndpoints -> api.authService 'verify / issue JWT'
     api.restEndpoints -> api.achievementService 'tree / aggregate'
     api.restEndpoints -> api.repos 'groups, members, categories'
 
@@ -218,7 +224,7 @@ views {
 
     include familyAchievements.api.*
     include familyAchievements.db
-    include member, admin
+    include member, admin, telegramCloud
 
     autoLayout LeftRight
   }

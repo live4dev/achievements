@@ -163,7 +163,7 @@ class TestSubmitClaim:
         assert claim.status == "SUBMITTED"
 
     async def test_burnable_cooldown_active_after_grant_raises(self, session: AsyncSession):
-        """Burnable achievement: cooldown after a completed period should block re-claim."""
+        """Admin-granted burnable: cooldown via gua.achieved_at fallback blocks re-claim."""
         cat = await make_category(session)
         ach = await make_achievement(
             session, cat.id, code="s11",
@@ -173,7 +173,8 @@ class TestSubmitClaim:
         user = await make_user(session, tg_user_id=11)
         await make_member(session, group.id, user.id)
 
-        # GUA in achieved state, no active period (just completed a period), achieved recently
+        # GUA in achieved state with no claim record (e.g. admin-granted),
+        # achieved recently — cooldown should still block via achieved_at fallback.
         recent_achieved = datetime.now(tz=timezone.utc) - timedelta(hours=1)
         await make_gua(
             session, group.id, user.id, ach.id,
@@ -182,6 +183,99 @@ class TestSubmitClaim:
 
         with pytest.raises(ClaimError, match="перезарядке"):
             await submit_claim(session, group.id, user.id, ach.id)
+
+    async def test_burnable_cooldown_within_period_raises(self, session: AsyncSession):
+        """Within an active burnable period, cooldown between claims must be enforced."""
+        cat = await make_category(session)
+        ach = await make_achievement(
+            session, cat.id, code="s13",
+            burnable=True, required_count=5, period_days=30, cooldown_hours=24,
+        )
+        group = await make_group(session)
+        user = await make_user(session, tg_user_id=13)
+        await make_member(session, group.id, user.id)
+
+        # Active period started, first claim was approved 1 hour ago
+        period_start = datetime.now(tz=timezone.utc) - timedelta(days=1)
+        await make_gua(
+            session, group.id, user.id, ach.id,
+            status="AVAILABLE", level=0, burnable_progress=1, period_start=period_start,
+        )
+        await make_claim(
+            session, group.id, user.id, ach.id,
+            status="APPROVED",
+            reviewed_at=datetime.now(tz=timezone.utc) - timedelta(hours=1),
+        )
+
+        with pytest.raises(ClaimError, match="перезарядке"):
+            await submit_claim(session, group.id, user.id, ach.id)
+
+    async def test_burnable_cooldown_within_period_expired_succeeds(self, session: AsyncSession):
+        """Within an active burnable period, a claim is allowed once cooldown has passed."""
+        cat = await make_category(session)
+        ach = await make_achievement(
+            session, cat.id, code="s14",
+            burnable=True, required_count=5, period_days=30, cooldown_hours=24,
+        )
+        group = await make_group(session)
+        user = await make_user(session, tg_user_id=14)
+        await make_member(session, group.id, user.id)
+
+        period_start = datetime.now(tz=timezone.utc) - timedelta(days=3)
+        await make_gua(
+            session, group.id, user.id, ach.id,
+            status="AVAILABLE", level=0, burnable_progress=1, period_start=period_start,
+        )
+        await make_claim(
+            session, group.id, user.id, ach.id,
+            status="APPROVED",
+            reviewed_at=datetime.now(tz=timezone.utc) - timedelta(hours=25),
+        )
+
+        claim = await submit_claim(session, group.id, user.id, ach.id)
+        assert claim.status == "SUBMITTED"
+
+    async def test_burnable_cooldown_after_claim_grant_raises(self, session: AsyncSession):
+        """Post-grant cooldown is enforced when the grant happened via claim flow."""
+        cat = await make_category(session)
+        ach = await make_achievement(
+            session, cat.id, code="s15",
+            burnable=True, required_count=2, period_days=7, cooldown_hours=48,
+        )
+        group = await make_group(session)
+        user = await make_user(session, tg_user_id=15)
+        await make_member(session, group.id, user.id)
+
+        # GUA granted recently, period closed
+        recent_granted = datetime.now(tz=timezone.utc) - timedelta(hours=2)
+        await make_gua(
+            session, group.id, user.id, ach.id,
+            status="ACHIEVED", level=1, achieved_at=recent_granted, period_start=None,
+        )
+        # Approved claim that triggered the grant
+        await make_claim(
+            session, group.id, user.id, ach.id,
+            status="APPROVED",
+            reviewed_at=recent_granted,
+        )
+
+        with pytest.raises(ClaimError, match="перезарядке"):
+            await submit_claim(session, group.id, user.id, ach.id)
+
+    async def test_burnable_no_cooldown_on_first_ever_claim(self, session: AsyncSession):
+        """No cooldown when submitting the very first claim for a burnable achievement."""
+        cat = await make_category(session)
+        ach = await make_achievement(
+            session, cat.id, code="s16",
+            burnable=True, required_count=3, period_days=14, cooldown_hours=24,
+        )
+        group = await make_group(session)
+        user = await make_user(session, tg_user_id=16)
+        await make_member(session, group.id, user.id)
+        # No GUA, no prior claims
+
+        claim = await submit_claim(session, group.id, user.id, ach.id)
+        assert claim.status == "SUBMITTED"
 
     async def test_no_evidence_defaults_to_empty_dict(self, session: AsyncSession):
         cat = await make_category(session)

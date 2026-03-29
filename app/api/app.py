@@ -11,6 +11,7 @@ from app.api.routers.auth import router as auth_router
 from app.core.config import APP_VERSION, settings
 
 _FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+_DIAGRAM_DIR = Path(__file__).resolve().parents[2] / "frontend" / "likec4_diagram"
 
 
 @asynccontextmanager
@@ -35,6 +36,10 @@ def create_fastapi_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(achievements_router)
     app.include_router(admin_router)
+
+    # Serve LikeC4 architecture diagram viewer
+    if _DIAGRAM_DIR.exists():
+        app.mount("/diagram", StaticFiles(directory=str(_DIAGRAM_DIR), html=True), name="diagram")
 
     # Serve frontend static files (must be mounted last)
     if _FRONTEND_DIR.exists():

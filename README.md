@@ -141,7 +141,17 @@ docker compose up --build
 
 **Базовый URL:** `http://localhost:8000`
 
-**Документация:** `http://localhost:8000/docs`
+**Документация по API:** `http://localhost:8000/docs`
+
+## LikeC4
+
+**LikeC4**: `http://localhost:8000/diagram/`
+
+Обновление like C4
+
+```bash
+ npx likec4@latest build info/ -o frontend/likec4_diagram --base-url /diagram/ --use-hash-history
+```
 
 ### Эндпоинты
 

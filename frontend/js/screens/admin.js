@@ -33,6 +33,11 @@ async function showAdminHome() {
         <span class="admin-menu-item__label">Ачивки</span>
         <span class="admin-menu-item__arrow">›</span>
       </a>
+      <a class="admin-menu-item" href="/diagram" target="_blank">
+        <span class="admin-menu-item__icon">🗺️</span>
+        <span class="admin-menu-item__label">Архитектура</span>
+        <span class="admin-menu-item__arrow">↗</span>
+      </a>
     </div>
     <p id="admin-version" style="text-align:center;font-size:0.75rem;color:var(--tg-hint);margin-top:24px;"></p>
   `);
