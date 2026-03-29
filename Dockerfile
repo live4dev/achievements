@@ -7,4 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ARG APP_VERSION=unknown
+ENV APP_VERSION=${APP_VERSION}
+
 CMD ["python", "main.py"]

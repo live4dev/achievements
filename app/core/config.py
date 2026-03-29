@@ -1,9 +1,14 @@
+import os
 import subprocess
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def _get_version() -> str:
+    # Baked in at image build time by the CI pipeline (preferred).
+    if v := os.environ.get("APP_VERSION"):
+        return v
+    # Local dev fallback: derive from git.
     try:
         return subprocess.check_output(
             ["git", "describe", "--tags", "--always", "--dirty"],
