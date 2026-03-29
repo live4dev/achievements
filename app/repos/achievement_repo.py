@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,17 @@ from app.models.orm import (
     Category,
     GroupUserAchievement,
 )
+
+
+def _is_period_expired(
+    gua: GroupUserAchievement,
+    achievement: Achievement,
+    now: datetime,
+) -> bool:
+    """Returns True if the burnable period window has elapsed."""
+    if not achievement.burnable or gua is None or gua.period_start is None:
+        return False
+    return now >= gua.period_start + timedelta(days=achievement.period_days)
 
 
 async def get_achievement_by_id(
@@ -75,20 +86,61 @@ async def upsert_gua_approved(
     group_id: uuid.UUID,
     user_id: uuid.UUID,
     achievement: Achievement,
-) -> GroupUserAchievement:
+) -> tuple[GroupUserAchievement, str]:
+    """
+    Returns (gua, outcome) where outcome is one of:
+      "GRANTED"  — achievement level incremented (standard / repeatable / burnable completion)
+      "PROGRESS" — burnable progress incremented, not yet complete
+      "RESET"    — burnable period expired; progress reset and new period started
+    """
     gua = await get_gua(session, group_id, user_id, achievement.id)
     now = datetime.now(tz=timezone.utc)
+    outcome = "GRANTED"
 
     if gua is None:
-        gua = GroupUserAchievement(
-            group_id=group_id,
-            user_id=user_id,
-            achievement_id=achievement.id,
-            level=1,
-            status="ACHIEVED",
-            achieved_at=now,
-        )
+        if achievement.burnable:
+            # First-ever approval: start period, don't grant yet
+            gua = GroupUserAchievement(
+                group_id=group_id,
+                user_id=user_id,
+                achievement_id=achievement.id,
+                level=0,
+                status="AVAILABLE",
+                achieved_at=None,
+                burnable_progress=1,
+                period_start=now,
+            )
+            outcome = "PROGRESS"
+        else:
+            gua = GroupUserAchievement(
+                group_id=group_id,
+                user_id=user_id,
+                achievement_id=achievement.id,
+                level=1,
+                status="ACHIEVED",
+                achieved_at=now,
+            )
         session.add(gua)
+    elif achievement.burnable:
+        if _is_period_expired(gua, achievement, now) or gua.period_start is None:
+            # Stale or no period — reset and start fresh
+            gua.burnable_progress = 1
+            gua.period_start = now
+            gua.status = "AVAILABLE"
+            outcome = "RESET"
+        else:
+            gua.burnable_progress += 1
+            if gua.burnable_progress >= achievement.required_count:
+                # Period completed — grant the achievement
+                gua.level += 1
+                gua.status = "ACHIEVED"
+                gua.achieved_at = now
+                gua.burnable_progress = 0
+                gua.period_start = None
+                outcome = "GRANTED"
+            else:
+                gua.status = "AVAILABLE"
+                outcome = "PROGRESS"
     else:
         if achievement.repeatable:
             gua.level += 1
@@ -100,7 +152,7 @@ async def upsert_gua_approved(
         gua.status = "ACHIEVED"
 
     await session.flush()
-    return gua
+    return gua, outcome
 
 
 def compute_achievement_status(
@@ -121,7 +173,11 @@ def compute_achievement_status(
         if user_level < prereq.min_level:
             return "LOCKED"
 
-    # Check exhaustion
+    # Burnables are always AVAILABLE once prereqs are met — period reset is lazy
+    if achievement.burnable:
+        return "AVAILABLE"
+
+    # Check exhaustion for non-burnable achievements
     if gua and gua.status == "ACHIEVED":
         if not achievement.repeatable:
             return "ACHIEVED"

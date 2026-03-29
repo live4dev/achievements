@@ -39,6 +39,9 @@ async function showGroup(groupId) {
     const repeatBadge = a.repeatable
       ? `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>`
       : '';
+    const burnableBadge = a.burnable
+      ? `<span class="badge badge-burnable">🔥 ${a.required_count}× за ${a.period_days}д.</span>`
+      : '';
     const autoBadge = a.auto_grant ? `<span class="badge badge-auto">⚡ Авто</span>` : '';
     const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
     const achieversList = state.achieved_by.length
@@ -58,12 +61,14 @@ async function showGroup(groupId) {
               ${pts}
               <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
               ${repeatBadge}
+              ${burnableBadge}
               ${autoBadge}
             </div>
           </div>
         </div>
         <div class="ach-card__detail">
           <p class="ach-card__desc">${esc(a.description)}</p>
+          ${a.burnable ? `<p class="ach-card__burnable-hint">🔥 Нужно выполнить <b>${a.required_count}</b> раз за <b>${a.period_days}</b> дн. — прогресс сгорает!</p>` : ''}
           ${achieversList}
         </div>
       </div>

@@ -15,7 +15,8 @@ async function showAdminAchievements() {
         <div class="admin-item__meta">
           <span class="badge badge-${esc(a.rarity)}">${esc(RARITY_LABEL[a.rarity] || a.rarity)}</span>
           ${a.auto_grant ? ' · ' + '<span class="badge badge-auto">⚡ Авто</span>' : ''}
-                    ${a.repeatable? ' · ' + `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>`: ''}
+          ${a.repeatable ? ' · ' + `<span class="badge">♻️ повт${a.max_level ? ` до ур.${a.max_level}` : ''}</span>` : ''}
+          ${a.burnable ? ' · ' + `<span class="badge badge-burnable">🔥 ${a.required_count}× за ${a.period_days}д.</span>` : ''}
           ${a.category_code ? ' · ' + esc(a.category_code) : ''}
           ${a.points ? ' · ' + a.points + ' ⭐' : ''}
         </div>
@@ -120,6 +121,21 @@ async function showAdminAchievementForm(code) {
         <label class="form-check">
           <input id="f-autogrant" type="checkbox" ${ach?.auto_grant ? 'checked' : ''}> ⚡ Выдаётся автоматически
         </label>
+        <label class="form-check">
+          <input id="f-burnable" type="checkbox" ${ach?.burnable ? 'checked' : ''}> 🔥 Сгораемая (burnable)
+        </label>
+      </div>
+      <div id="burnable-fields" ${ach?.burnable ? '' : 'hidden'}>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Кол-во выполнений</label>
+            <input id="f-required-count" class="form-input" type="number" min="1" value="${ach?.required_count ?? ''}" placeholder="5">
+          </div>
+          <div class="form-group">
+            <label>Период (дней)</label>
+            <input id="f-period-days" class="form-input" type="number" min="1" value="${ach?.period_days ?? ''}" placeholder="7">
+          </div>
+        </div>
       </div>
       ${!isNew ? `<label class="form-check"><input id="f-active" type="checkbox" ${ach.is_active ? 'checked' : ''}> Активна</label>` : ''}
 
@@ -129,6 +145,10 @@ async function showAdminAchievementForm(code) {
       ${prereqSection}
     </div>
   `);
+
+  document.getElementById('f-burnable').addEventListener('change', e => {
+    document.getElementById('burnable-fields').hidden = !e.target.checked;
+  });
 
   document.getElementById('btn-save').onclick = async () => {
     hideAdminError();
@@ -144,6 +164,9 @@ async function showAdminAchievementForm(code) {
       auto_grant: document.getElementById('f-autogrant').checked,
       max_level: parseInt(document.getElementById('f-maxlvl').value) || null,
       cooldown_hours: parseInt(document.getElementById('f-cooldown').value) || null,
+      burnable: document.getElementById('f-burnable').checked,
+      required_count: parseInt(document.getElementById('f-required-count').value) || null,
+      period_days: parseInt(document.getElementById('f-period-days').value) || null,
     };
     if (!data.title) { showAdminError('Введите название'); return; }
     try {

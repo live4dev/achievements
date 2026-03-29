@@ -126,6 +126,9 @@ async def _import(session: AsyncSession, data: dict) -> None:
         ach.is_active = a.get("is_active", True)
         ach.sort_order = a.get("sort_order", 0)
         ach.auto_grant = a.get("auto_grant", False)
+        ach.burnable = a.get("burnable", False)
+        ach.required_count = a.get("required_count")
+        ach.period_days = a.get("period_days")
 
         await session.flush()
         ach_by_code[ach.code] = ach

@@ -58,12 +58,20 @@ async def submit_claim(
     status = compute_achievement_status(achievement, gua_map.get(achievement_id), achieved_map)
     if status == "LOCKED":
         raise ClaimError("Ачивка ещё заблокирована: не выполнены необходимые условия.")
-    if status == "ACHIEVED" and not achievement.repeatable:
+    if status == "ACHIEVED" and not achievement.repeatable and not achievement.burnable:
         raise ClaimError("Ачивка уже получена и не является повторяемой.")
     if achievement.repeatable and achievement.cooldown_hours:
         last = await get_last_approved_claim(session, group_id, user_id, achievement_id)
         if last and last.reviewed_at:
             available_at = last.reviewed_at + timedelta(hours=achievement.cooldown_hours)
+            if datetime.now(tz=timezone.utc) < available_at:
+                raise ClaimError(
+                    f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
+                )
+    if achievement.burnable and achievement.cooldown_hours:
+        gua_for_cd = gua_map.get(achievement_id)
+        if gua_for_cd and gua_for_cd.achieved_at and gua_for_cd.period_start is None:
+            available_at = gua_for_cd.achieved_at + timedelta(hours=achievement.cooldown_hours)
             if datetime.now(tz=timezone.utc) < available_at:
                 raise ClaimError(
                     f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
@@ -126,7 +134,7 @@ async def _process_auto_grants(
             break
 
         for ach in new_this_round:
-            gua = await upsert_gua_approved(session, group_id, user_id, ach)
+            gua, _ = await upsert_gua_approved(session, group_id, user_id, ach)
             await add_event(
                 session,
                 group_id=group_id,
@@ -168,16 +176,51 @@ async def approve_claim(
     claim.reviewed_at = now
     claim.reviewed_by_user_id = admin_user_id
 
-    gua = await upsert_gua_approved(session, claim.group_id, claim.user_id, achievement)
+    gua, outcome = await upsert_gua_approved(session, claim.group_id, claim.user_id, achievement)
 
-    await add_event(
-        session,
-        group_id=claim.group_id,
-        user_id=claim.user_id,
-        achievement_id=claim.achievement_id,
-        event_type="CLAIM_APPROVED",
-        payload={"claim_id": str(claim.id), "level": gua.level},
-    )
+    if achievement.burnable and outcome == "PROGRESS":
+        await add_event(
+            session,
+            group_id=claim.group_id,
+            user_id=claim.user_id,
+            achievement_id=claim.achievement_id,
+            event_type="BURNABLE_PROGRESS",
+            payload={
+                "claim_id": str(claim.id),
+                "progress": gua.burnable_progress,
+                "required": achievement.required_count,
+            },
+        )
+    elif achievement.burnable and outcome == "RESET":
+        await add_event(
+            session,
+            group_id=claim.group_id,
+            user_id=claim.user_id,
+            achievement_id=claim.achievement_id,
+            event_type="BURNABLE_RESET",
+            payload={"claim_id": str(claim.id)},
+        )
+        await add_event(
+            session,
+            group_id=claim.group_id,
+            user_id=claim.user_id,
+            achievement_id=claim.achievement_id,
+            event_type="BURNABLE_PROGRESS",
+            payload={
+                "claim_id": str(claim.id),
+                "progress": gua.burnable_progress,
+                "required": achievement.required_count,
+            },
+        )
+    else:
+        await add_event(
+            session,
+            group_id=claim.group_id,
+            user_id=claim.user_id,
+            achievement_id=claim.achievement_id,
+            event_type="CLAIM_APPROVED",
+            payload={"claim_id": str(claim.id), "level": gua.level},
+        )
 
     auto_granted = await _process_auto_grants(session, claim.group_id, claim.user_id)
 
@@ -192,6 +235,9 @@ async def approve_claim(
         "achievement": claim.achievement,
         "level": gua.level,
         "auto_granted": auto_granted,
+        "burnable_outcome": outcome if achievement.burnable else None,
+        "burnable_progress": gua.burnable_progress if achievement.burnable else None,
+        "burnable_required": achievement.required_count if achievement.burnable else None,
     }
 
 

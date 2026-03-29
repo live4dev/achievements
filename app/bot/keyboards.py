@@ -71,7 +71,12 @@ def achievement_list_kb(
         rarity_emoji = RARITY_EMOJI.get(ach.rarity, "")
         icon = f"{ach.icon} " if ach.icon else ""
         auto_prefix = "⚡ " if getattr(ach, "auto_grant", False) else ""
-        label = f"{auto_prefix}{rarity_emoji} {icon}{ach.title}"
+        burnable_suffix = ""
+        if getattr(ach, "burnable", False):
+            us = node.user_state
+            if us.burnable_progress > 0 and us.period_expires_at:
+                burnable_suffix = f" 🔥{us.burnable_progress}/{ach.required_count}"
+        label = f"{auto_prefix}{rarity_emoji} {icon}{ach.title}{burnable_suffix}"
         buttons.append([InlineKeyboardButton(label, callback_data=f"ach:{ach.id}")])
 
     buttons.append([InlineKeyboardButton("◀️ Назад", callback_data=back_cb)])

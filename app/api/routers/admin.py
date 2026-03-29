@@ -99,6 +99,9 @@ async def _ach_to_out(session: AsyncSession, ach: Achievement) -> AchievementAdm
         sort_order=ach.sort_order,
         is_active=ach.is_active,
         auto_grant=ach.auto_grant,
+        burnable=ach.burnable,
+        required_count=ach.required_count,
+        period_days=ach.period_days,
         prerequisites=prereqs,
     )
 
@@ -164,6 +167,9 @@ async def create_achievement_endpoint(body: AchievementCreate, session: SessionD
         points=body.points,
         sort_order=body.sort_order,
         auto_grant=body.auto_grant,
+        burnable=body.burnable,
+        required_count=body.required_count,
+        period_days=body.period_days,
     )
     await session.commit()
     await session.refresh(ach)

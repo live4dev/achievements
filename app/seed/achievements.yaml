@@ -47,6 +47,21 @@ achievements:
       - code: first_run
         min_level: 1
 
+  - code: weekly_runner
+    title: Недельный марафонец
+    description: Пробегись 5 раз за 7 дней. Если не успеешь — прогресс сгорит!
+    category: health
+    rarity: RARE
+    burnable: true
+    required_count: 5
+    period_days: 7
+    points: 75
+    icon: 🔥
+    sort_order: 25
+    prerequisites:
+      - code: first_run
+        min_level: 1
+
   - code: marathon_spirit
     title: Дух марафонца
     description: Пробеги 42 км суммарно за неделю.

@@ -31,6 +31,9 @@ class AchievementNode(BaseModel):
     sort_order: int
     points: int | None
     auto_grant: bool = False
+    burnable: bool = False
+    required_count: int | None = None
+    period_days: int | None = None
 
 
 class EdgeOut(BaseModel):
@@ -44,6 +47,8 @@ class UserStateValue(BaseModel):
     level: int
     achieved_at: str | None
     cooldown_until: str | None = None  # ISO datetime while cooldown is active
+    burnable_progress: int = 0
+    period_expires_at: str | None = None
 
 
 class TreeResponse(BaseModel):

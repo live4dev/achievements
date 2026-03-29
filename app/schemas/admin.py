@@ -43,6 +43,9 @@ class AchievementCreate(BaseModel):
     points: int | None = None
     sort_order: int = 0
     auto_grant: bool = False
+    burnable: bool = False
+    required_count: int | None = None
+    period_days: int | None = None
 
 
 class AchievementUpdate(BaseModel):
@@ -58,6 +61,9 @@ class AchievementUpdate(BaseModel):
     sort_order: int | None = None
     is_active: bool | None = None
     auto_grant: bool | None = None
+    burnable: bool | None = None
+    required_count: int | None = None
+    period_days: int | None = None
 
 
 class PrereqOut(BaseModel):
@@ -81,6 +87,9 @@ class AchievementAdminOut(BaseModel):
     sort_order: int
     is_active: bool
     auto_grant: bool = False
+    burnable: bool = False
+    required_count: int | None = None
+    period_days: int | None = None
     prerequisites: list[PrereqOut] = []
 
     model_config = {"from_attributes": True}

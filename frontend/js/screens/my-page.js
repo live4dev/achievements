@@ -46,10 +46,18 @@ async function showMyPage(groupId) {
     const pts = a.points ? `<span class="ach-card__points">${a.points}⭐</span>` : '';
     const rarityLabel = RARITY_LABEL[a.rarity] || a.rarity;
     const autoBadge = a.auto_grant ? `<span class="badge badge-auto">⚡ Auto</span>` : '';
+    const burnableBadge = a.burnable
+      ? `<span class="badge badge-burnable">🔥 ${a.required_count}× за ${a.period_days}д.</span>`
+      : '';
     let statusBadge = '';
     let actionBtn = '';
     const onCooldown = state.cooldown_until && new Date(state.cooldown_until) > new Date();
-    if (state.status === 'ACHIEVED' && !onCooldown) {
+    if (a.burnable && state.burnable_progress > 0 && state.period_expires_at) {
+      const exp = new Date(state.period_expires_at);
+      const ddmm = exp.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+      const hhmm = exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      statusBadge = `<span class="status-badge status-burnable-progress">🔥 ${state.burnable_progress}/${a.required_count} до ${ddmm} ${hhmm}</span>`;
+    } else if (state.status === 'ACHIEVED' && !onCooldown) {
       statusBadge = `<span class="status-badge status-achieved">✓ Получена${state.level > 1 ? ' ур.' + state.level : ''}</span>`;
     } else if (onCooldown) {
       const until = new Date(state.cooldown_until);
@@ -82,6 +90,7 @@ async function showMyPage(groupId) {
               ${pts}
               <span class="badge badge-${esc(a.rarity)}">${esc(rarityLabel)}</span>
               ${autoBadge}
+              ${burnableBadge}
               ${statusBadge}
             </div>
             ${actionBtn ? `<div class="ach-card__actions">${actionBtn}</div>` : ''}
@@ -89,6 +98,15 @@ async function showMyPage(groupId) {
         </div>
         <div class="ach-card__detail">
           <p class="ach-card__desc">${esc(a.description)}</p>
+          ${a.burnable ? (() => {
+            if (state.period_expires_at) {
+              const exp = new Date(state.period_expires_at);
+              const ddmm = exp.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+              const hhmm = exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return `<p class="ach-card__burnable-hint">🔥 Прогресс: <b>${state.burnable_progress}/${a.required_count}</b> — период до ${ddmm} ${hhmm}</p>`;
+            }
+            return `<p class="ach-card__burnable-hint">🔥 Нужно выполнить <b>${a.required_count}</b> раз за <b>${a.period_days}</b> дн. — прогресс сгорает!</p>`;
+          })() : ''}
           <div class="claim-form" id="claim-form-${esc(a.code)}" hidden>
             <textarea class="form-textarea claim-evidence" placeholder="Опишите подтверждение (необязательно)"></textarea>
             <div class="claim-form__actions">

@@ -31,6 +31,9 @@ class AchievementOut(BaseModel):
     is_active: bool
     sort_order: int
     auto_grant: bool = False
+    burnable: bool = False
+    required_count: int | None = None
+    period_days: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -46,6 +49,8 @@ class UserAchievementState(BaseModel):
     level: int
     status: Literal["LOCKED", "AVAILABLE", "ACHIEVED"]
     achieved_at: str | None
+    burnable_progress: int = 0
+    period_expires_at: str | None = None
 
 
 class AchievementTreeNode(BaseModel):

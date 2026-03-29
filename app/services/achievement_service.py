@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.orm import Achievement, GroupUserAchievement
 from app.repos.achievement_repo import (
+    _is_period_expired,
     compute_achievement_status,
     get_all_active_achievements,
     get_all_categories,
@@ -48,15 +49,27 @@ async def get_user_achievement_tree(
         aid: g.level for aid, g in gua_map.items() if g.status == "ACHIEVED"
     }
 
+    now = datetime.now(tz=timezone.utc)
     nodes: list[AchievementTreeNode] = []
     for ach in achievements:
         gua = gua_map.get(ach.id)
         status = compute_achievement_status(ach, gua, achieved_map)
 
+        burnable_progress = 0
+        period_expires_at = None
+        if ach.burnable and gua and gua.period_start:
+            burnable_progress = gua.burnable_progress
+            if not _is_period_expired(gua, ach, now):
+                period_expires_at = (
+                    gua.period_start + timedelta(days=ach.period_days)
+                ).isoformat()
+
         user_state = UserAchievementState(
             level=gua.level if gua else 0,
             status=status,
             achieved_at=gua.achieved_at.isoformat() if (gua and gua.achieved_at) else None,
+            burnable_progress=burnable_progress,
+            period_expires_at=period_expires_at,
         )
         ach_out = AchievementOut.model_validate(ach)
         ach_out.category_name = ach.category.name if ach.category else None
@@ -112,6 +125,9 @@ def _to_ach_node(ach: Achievement) -> AchievementNode:
         sort_order=ach.sort_order,
         points=ach.points,
         auto_grant=ach.auto_grant,
+        burnable=ach.burnable,
+        required_count=ach.required_count,
+        period_days=ach.period_days,
     )
 
 
@@ -159,11 +175,23 @@ async def get_user_tree_graph(
                 available_at = last_ts + timedelta(hours=ach.cooldown_hours)
                 if now < available_at:
                     cooldown_until = available_at.isoformat()
+
+        burnable_progress = 0
+        period_expires_at = None
+        if ach.burnable and gua and gua.period_start:
+            burnable_progress = gua.burnable_progress
+            if not _is_period_expired(gua, ach, now):
+                period_expires_at = (
+                    gua.period_start + timedelta(days=ach.period_days)
+                ).isoformat()
+
         user_state[ach.code] = UserStateValue(
             status=status,
             level=gua.level if gua else 0,
             achieved_at=gua.achieved_at.isoformat() if (gua and gua.achieved_at) else None,
             cooldown_until=cooldown_until,
+            burnable_progress=burnable_progress,
+            period_expires_at=period_expires_at,
         )
 
     return TreeResponse(

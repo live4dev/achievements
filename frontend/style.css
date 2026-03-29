@@ -530,9 +530,18 @@ html, body {
   margin-left: 4px;
 }
 
-.status-achieved  { background: color-mix(in srgb, #4caf50 20%, transparent); color: #4caf50; }
-.status-locked    { background: color-mix(in srgb, var(--tg-hint) 15%, transparent); color: var(--tg-hint); }
-.status-cooldown  { background: color-mix(in srgb, #ff9800 20%, transparent); color: #ff9800; }
+.status-achieved          { background: color-mix(in srgb, #4caf50 20%, transparent); color: #4caf50; }
+.status-locked            { background: color-mix(in srgb, var(--tg-hint) 15%, transparent); color: var(--tg-hint); }
+.status-cooldown          { background: color-mix(in srgb, #ff9800 20%, transparent); color: #ff9800; }
+.status-burnable-progress { background: color-mix(in srgb, #ff5722 20%, transparent); color: #ff5722; }
+
+.badge-burnable { border-color: #ff5722; color: #ff5722; }
+
+.ach-card__burnable-hint {
+  font-size: 0.8rem;
+  color: #ff5722;
+  margin: 6px 0 0;
+}
 
 /* Dim locked achievement cards */
 .ach-card--my.status-locked { opacity: 0.55; }

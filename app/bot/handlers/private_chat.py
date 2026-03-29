@@ -389,6 +389,23 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             max_txt = f"/{ach.max_level}" if ach.max_level else ""
             level_text = f"\n<b>Уровень:</b> {state.level}{max_txt}"
 
+        burnable_text = ""
+        if ach.burnable:
+            from datetime import datetime as _dt
+            progress = state.burnable_progress
+            required = ach.required_count or 0
+            if state.period_expires_at:
+                exp = _dt.fromisoformat(state.period_expires_at)
+                burnable_text = (
+                    f"\n🔥 <b>Прогресс:</b> {progress}/{required}"
+                    f" (до {exp.strftime('%d.%m %H:%M')} UTC)"
+                )
+            else:
+                burnable_text = (
+                    f"\n🔥 <b>Задание:</b> {required}× за {ach.period_days} дн."
+                    f" (прогресс сгорает!)"
+                )
+
         points_text = f"\n<b>Очки:</b> {ach.points}" if ach.points else ""
         auto_grant_text = "\n<b>Авто-выдача:</b> ⚡ Да" if ach.auto_grant else ""
 
@@ -397,6 +414,7 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             f"<i>{RARITY_LABEL.get(ach.rarity, ach.rarity)}</i>\n\n"
             f"{ach.description}"
             f"{level_text}"
+            f"{burnable_text}"
             f"{points_text}"
             f"{auto_grant_text}"
             f"{prereqs_text}"
@@ -518,41 +536,67 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             user = result["user"]
             group = result["group"]
             level = result["level"]
+            burnable_outcome = result.get("burnable_outcome")
 
-            # Notify the claimant in their DM
-            level_text = f" (уровень {level})" if ach.repeatable else ""
-            try:
-                await context.bot.send_message(
-                    chat_id=user.tg_user_id,
-                    text=(
-                        f"🎉 Ваша заявка на ачивку <b>{ach.title}</b> подтверждена{level_text}!\n"
-                        f"Поздравляем!"
-                    ),
-                    parse_mode="HTML",
-                )
-            except Exception as e:
-                logger.warning("Could not DM user %s: %s", user.tg_user_id, e)
-
-            # Notify the group chat
-            if group.telegram_chat_id:
+            if burnable_outcome in ("PROGRESS", "RESET"):
+                # Burnable progress update — quiet DM only, no group announcement
+                progress = result["burnable_progress"]
+                required = result["burnable_required"]
+                reset_note = "⚠️ Прошлый период истёк, прогресс сброшен.\n" if burnable_outcome == "RESET" else ""
                 try:
-                    mention = f"@{user.username}" if user.username else f"<b>{_user_display(user)}</b>"
-                    icon_part = f"{ach.icon} " if ach.icon else ""
-                    if ach.repeatable:
-                        max_txt = f"/{ach.max_level}" if ach.max_level else ""
-                        progress_part = f" — уровень {level}{max_txt}"
-                    else:
-                        progress_part = ""
                     await context.bot.send_message(
-                        chat_id=group.telegram_chat_id,
+                        chat_id=user.tg_user_id,
                         text=(
-                            f"🏆 {mention} получил(а) ачивку "
-                            f"«<b>{ach.title}</b>» {icon_part}({ach.rarity}){progress_part}!"
+                            f"{reset_note}"
+                            f"🔥 Прогресс по ачивке <b>{ach.title}</b>: {progress}/{required}.\n"
+                            f"Продолжай!"
                         ),
                         parse_mode="HTML",
                     )
                 except Exception as e:
-                    logger.warning("Could not notify group chat: %s", e)
+                    logger.warning("Could not DM user %s: %s", user.tg_user_id, e)
+            else:
+                # Standard grant (including burnable completion)
+                if ach.burnable:
+                    level_text = f" (выполнение #{level})"
+                elif ach.repeatable:
+                    level_text = f" (уровень {level})"
+                else:
+                    level_text = ""
+                try:
+                    await context.bot.send_message(
+                        chat_id=user.tg_user_id,
+                        text=(
+                            f"🎉 Ваша заявка на ачивку <b>{ach.title}</b> подтверждена{level_text}!\n"
+                            f"Поздравляем!"
+                        ),
+                        parse_mode="HTML",
+                    )
+                except Exception as e:
+                    logger.warning("Could not DM user %s: %s", user.tg_user_id, e)
+
+                # Notify the group chat
+                if group.telegram_chat_id:
+                    try:
+                        mention = f"@{user.username}" if user.username else f"<b>{_user_display(user)}</b>"
+                        icon_part = f"{ach.icon} " if ach.icon else ""
+                        if ach.burnable:
+                            progress_part = f" — выполнение #{level}"
+                        elif ach.repeatable:
+                            max_txt = f"/{ach.max_level}" if ach.max_level else ""
+                            progress_part = f" — уровень {level}{max_txt}"
+                        else:
+                            progress_part = ""
+                        await context.bot.send_message(
+                            chat_id=group.telegram_chat_id,
+                            text=(
+                                f"🏆 {mention} получил(а) ачивку "
+                                f"«<b>{ach.title}</b>» {icon_part}({ach.rarity}){progress_part}!"
+                            ),
+                            parse_mode="HTML",
+                        )
+                    except Exception as e:
+                        logger.warning("Could not notify group chat: %s", e)
 
             # Send notifications for auto-granted achievements
             for ag in result.get("auto_granted", []):

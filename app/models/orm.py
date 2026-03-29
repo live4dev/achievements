@@ -161,6 +161,9 @@ class Achievement(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     auto_grant: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    burnable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    required_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    period_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     category: Mapped["Category"] = relationship(back_populates="achievements")
     prerequisites: Mapped[list["AchievementPrerequisite"]] = relationship(
@@ -237,6 +240,8 @@ class GroupUserAchievement(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    burnable_progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    period_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     group: Mapped["Group"] = relationship(back_populates="user_achievements")
     user: Mapped["User"] = relationship()
@@ -302,7 +307,7 @@ class AchievementEvent(Base):
     __tablename__ = "achievement_events"
     __table_args__ = (
         CheckConstraint(
-            "event_type IN ('CLAIM_SUBMITTED','CLAIM_APPROVED','CLAIM_REJECTED','LEVEL_INCREMENT','ADMIN_GRANTED')",
+            "event_type IN ('CLAIM_SUBMITTED','CLAIM_APPROVED','CLAIM_REJECTED','LEVEL_INCREMENT','ADMIN_GRANTED','BURNABLE_PROGRESS','BURNABLE_RESET')",
             name="ck_event_type",
         ),
     )
