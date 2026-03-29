@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routers.achievements import router as achievements_router
 from app.api.routers.admin import router as admin_router
 from app.api.routers.auth import router as auth_router
-from app.core.config import settings
+from app.core.config import APP_VERSION, settings
 
 _FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 def create_fastapi_app() -> FastAPI:
     app = FastAPI(
         title="Family Achievements API",
-        version="1.0.0",
+        version=APP_VERSION,
         lifespan=lifespan,
     )
     app.add_middleware(

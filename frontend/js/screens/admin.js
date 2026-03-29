@@ -16,7 +16,7 @@ function hideAdminError() {
   if (el) el.hidden = true;
 }
 
-function showAdminHome() {
+async function showAdminHome() {
   adminBack('#/');
   render(`
     <div class="screen-header">
@@ -34,5 +34,11 @@ function showAdminHome() {
         <span class="admin-menu-item__arrow">›</span>
       </a>
     </div>
+    <p id="admin-version" style="text-align:center;font-size:0.75rem;color:var(--tg-hint);margin-top:24px;"></p>
   `);
+  try {
+    const data = await apiAdmin('GET', '/version');
+    const el = document.getElementById('admin-version');
+    if (el) el.textContent = `v${data.version}`;
+  } catch (_) {}
 }

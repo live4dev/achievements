@@ -1,4 +1,19 @@
+import subprocess
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _get_version() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "describe", "--tags", "--always", "--dirty"],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        return "unknown"
+
+
+APP_VERSION = _get_version()
 
 
 class Settings(BaseSettings):

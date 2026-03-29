@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.config import APP_VERSION, settings
 from app.core.database import get_session
 from app.core.security import decode_access_token
 from app.models.orm import Achievement, AchievementPrerequisite, Category
@@ -40,6 +40,11 @@ from app.schemas.admin import (
 )
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+@router.get("/version")
+async def get_version():
+    return {"version": APP_VERSION}
 
 _bearer = HTTPBearer(auto_error=False)
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
