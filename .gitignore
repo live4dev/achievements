@@ -15,3 +15,5 @@ build/
 *.db-wal
 deploy/
 .DS_Store
+.idea/
+.coverage
