@@ -165,7 +165,7 @@ async def grant_achievement_safe(
                 f"ачивки «{achievement.title}»."
             )
 
-    new_gua = await upsert_gua_approved(session, group_id, target_user_id, achievement)
+    new_gua, _ = await upsert_gua_approved(session, group_id, target_user_id, achievement)
     await add_event(
         session,
         group_id=group_id,

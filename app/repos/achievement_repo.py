@@ -21,13 +21,24 @@ def _is_period_expired(
     """Returns True if the burnable period window has elapsed."""
     if not achievement.burnable or gua is None or gua.period_start is None:
         return False
-    return now >= gua.period_start + timedelta(days=achievement.period_days)
+    period_start = gua.period_start
+    # Normalize naive datetimes (e.g. from SQLite) to UTC-aware for comparison.
+    if period_start.tzinfo is None:
+        period_start = period_start.replace(tzinfo=timezone.utc)
+    return now >= period_start + timedelta(days=achievement.period_days)
 
 
 async def get_achievement_by_id(
     session: AsyncSession, achievement_id: uuid.UUID
 ) -> Achievement | None:
-    return await session.get(Achievement, achievement_id, options=[selectinload(Achievement.prerequisites)])
+    # Use SELECT instead of session.get so that selectinload is always applied,
+    # even when the object is already present in the identity map.
+    result = await session.execute(
+        select(Achievement)
+        .options(selectinload(Achievement.prerequisites))
+        .where(Achievement.id == achievement_id)
+    )
+    return result.scalar_one_or_none()
 
 
 async def get_all_active_achievements(

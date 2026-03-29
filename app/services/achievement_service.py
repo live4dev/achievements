@@ -172,6 +172,8 @@ async def get_user_tree_graph(
         if ach.repeatable and ach.cooldown_hours:
             last_ts = last_approved.get(ach.id)
             if last_ts is not None:
+                if last_ts.tzinfo is None:
+                    last_ts = last_ts.replace(tzinfo=timezone.utc)
                 available_at = last_ts + timedelta(hours=ach.cooldown_hours)
                 if now < available_at:
                     cooldown_until = available_at.isoformat()

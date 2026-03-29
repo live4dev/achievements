@@ -63,7 +63,10 @@ async def submit_claim(
     if achievement.repeatable and achievement.cooldown_hours:
         last = await get_last_approved_claim(session, group_id, user_id, achievement_id)
         if last and last.reviewed_at:
-            available_at = last.reviewed_at + timedelta(hours=achievement.cooldown_hours)
+            reviewed_at = last.reviewed_at
+            if reviewed_at.tzinfo is None:
+                reviewed_at = reviewed_at.replace(tzinfo=timezone.utc)
+            available_at = reviewed_at + timedelta(hours=achievement.cooldown_hours)
             if datetime.now(tz=timezone.utc) < available_at:
                 raise ClaimError(
                     f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
@@ -71,7 +74,10 @@ async def submit_claim(
     if achievement.burnable and achievement.cooldown_hours:
         gua_for_cd = gua_map.get(achievement_id)
         if gua_for_cd and gua_for_cd.achieved_at and gua_for_cd.period_start is None:
-            available_at = gua_for_cd.achieved_at + timedelta(hours=achievement.cooldown_hours)
+            achieved_at = gua_for_cd.achieved_at
+            if achieved_at.tzinfo is None:
+                achieved_at = achieved_at.replace(tzinfo=timezone.utc)
+            available_at = achieved_at + timedelta(hours=achievement.cooldown_hours)
             if datetime.now(tz=timezone.utc) < available_at:
                 raise ClaimError(
                     f"Ачивка на перезарядке до {available_at.strftime('%d.%m %H:%M')} UTC."
